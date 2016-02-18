@@ -18,8 +18,7 @@ module VGAController(
     wire [3:0] xBlockIndex = hCounter/`BLOCK_WIDTH;
     wire [3:0] yBlockIndex = vCounter/`BLOCK_HEIGHT;
 
-    initial
-    begin
+    initial begin
         hCounter = 0;
         vCounter = 0;
     end
