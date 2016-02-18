@@ -9,7 +9,9 @@ module Snake(
     input wire          ButtonCenter,
     output wire [0:7]   VGArgb,
     output wire         VGAHSync,
-    output wire         VGAVSync
+    output wire         VGAVSync,
+    output wire [6:0]   Seg,
+    output wire [3:0]   An
     );
 
     reg [`BITS_PER_BLOCK-1:0] blocks [0:`GRID_HEIGHT-1] [0:`GRID_WIDTH-1];
