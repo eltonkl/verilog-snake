@@ -1,11 +1,11 @@
 `include "Constants.v"
 
 module VGAController(
+    input [`BITS_PER_BLOCK-1:0]     Blocks [0:`GRID_HEIGHT-1] [0:`GRID_WIDTH-1],
+    input                           Clock,
     output reg [0:7]                RGB,
     output                          HSync,
-    output                          VSync,
-    input [`BITS_PER_BLOCK-1:0]     Blocks [0:`GRID_HEIGHT-1] [0:`GRID_WIDTH-1],
-    input                           Clock
+    output                          VSync
     );
 
     parameter hPeriod = `H_FRONT_PORCH + `H_SYNC_PULSE + `H_BACK_PORCH + `H_PIXELS;
@@ -55,7 +55,12 @@ module VGAController(
     end
 
     always @ (*) begin
-        
+        case (Blocks[yBlockIndex][xBlockIndex])
+            `BLOCK_EMPTY:   RGB = `COLOR_EMPTY;
+            `BLOCK_SNAKE:   RGB = `COLOR_SNAKE;
+            `BLOCK_FOOD:    RGB = `COLOR_FOOD;
+            `BLOCK_WALL:    RGB = `COLOR_WALL;
+        endcase
     end
 
 endmodule

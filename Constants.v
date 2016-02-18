@@ -29,3 +29,4 @@
 `define COLOR_FOOD      8'b11100000
 `define COLOR_WALL      8'b11111111
 `define COLOR_SNAKE     8'b00011100
+`define COLOR_EMPTY     8'b00000000
