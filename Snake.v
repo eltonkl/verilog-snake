@@ -1,4 +1,4 @@
-`include "Constants.vh"
+`include "Constants.v"
 
 module Snake(
     input wire          ButtonLeft,

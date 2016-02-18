@@ -1,4 +1,4 @@
-`include "Constants.vh"
+`include "Constants.v"
 
 module VGAController(
     output reg [0:2]    Red,
