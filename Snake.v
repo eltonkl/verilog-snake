@@ -28,14 +28,19 @@ module Snake(
         downPressed = 0;
         centerPressed = 0;
 
-            for (i = 0; i < `GRID_WIDTH; i = i + 1) begin
-                Blocks[0][i] = 2'b00;
-                Blocks[`GRID_HEIGHT-1][i] = 2'b00;
+        for (i = 0; i < `GRID_HEIGHT; i = i + 1) begin
+            for (j = 0; j < `GRID_WIDTH; j = j + 1) begin
+                Blocks[i][j] = `BLOCK_EMPTY;
             end
-            for (i = 1; i < `GRID_HEIGHT - 1; i = i + 1) begin
-                Blocks[i][0] = 2'b00;
-                Blocks[i][`GRID_WIDTH-1] = 2'b00;
-            end
+        end
+        for (i = 0; i < `GRID_WIDTH; i = i + 1) begin
+            Blocks[0][i] = `BLOCK_WALL;
+            Blocks[`GRID_HEIGHT-1][i] = `BLOCK_WALL;
+        end
+        for (i = 1; i < `GRID_HEIGHT - 1; i = i + 1) begin
+            Blocks[i][0] = `BLOCK_WALL;
+            Blocks[i][`GRID_WIDTH-1] = `BLOCK_WALL;
+        end
     end
 
     ClockDivider cd(
