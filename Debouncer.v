@@ -9,14 +9,12 @@ module Debouncer(
 	
 	assign Enabled = step && !step_prev;
 	
-	initial
-	begin
+	initial begin
 		step = 0;
 		stepPrev = 0;
 	end
 
-	always @ (posedge Clock)
-	begin
+	always @ (posedge Clock) begin
 		step <= Signal;
 		stepPrev <= step;
 	end
