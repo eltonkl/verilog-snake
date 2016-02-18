@@ -22,8 +22,8 @@
 
 `define BLOCK_HEIGHT    40
 `define BLOCK_WIDTH     40
-`define GRID_HEIGHT     ( `V_SIZE / `BLOCK_HEIGHT )
-`define GRID_WIDTH      ( `H_SIZE / `BLOCK_WIDTH )
+`define GRID_HEIGHT     ( `V_PIXELS / `BLOCK_HEIGHT )
+`define GRID_WIDTH      ( `H_PIXELS / `BLOCK_WIDTH )
 
 // R (3 bits) G (3 bits) B (2 bits)
 `define COLOR_FOOD      8'b11100000
