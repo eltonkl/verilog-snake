@@ -1,9 +1,9 @@
-`define H_SIZE          640
+`define H_PIXELS        640
 `define H_FRONT_PORCH   16
 `define H_SYNC_PULSE    96
 `define H_BACK_PORCH    48
 
-`define V_SIZE          480
+`define V_PIXELS        480
 `define V_FRONT_PORCH   10
 `define V_SYNC_PULSE    2
 `define V_BACK_PORCH    33
@@ -24,3 +24,8 @@
 `define BLOCK_WIDTH     40
 `define GRID_HEIGHT     ( `V_SIZE / `BLOCK_HEIGHT )
 `define GRID_WIDTH      ( `H_SIZE / `BLOCK_WIDTH )
+
+// R (3 bits) G (3 bits) B (2 bits)
+`define COLOR_FOOD      8'b11100000
+`define COLOR_WALL      8'b11111111
+`define COLOR_SNAKE     8'b00011100
