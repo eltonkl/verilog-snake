@@ -29,10 +29,11 @@ module Snake(
     reg downPressed;
     reg centerPressed;
     reg buttonPressed[2:0];
+    reg pauseEnable;
     
     reg gameClock;
-
-    wire clk;
+    reg debouncerClock;
+    //wire clk;
 
     initial begin
         // set the button pressed signals to 0 (not enable)
@@ -41,6 +42,7 @@ module Snake(
         upPressed = 0;
         downPressed = 0;
         centerPressed = 0;
+        pauseEnable = 0;    // not pause
 
         for (i = 0; i < `GRID_HEIGHT; i = i + 1) begin
             for (j = 0; j < `GRID_WIDTH; j = j + 1) begin
@@ -67,88 +69,126 @@ module Snake(
 
     ClockDivider cd(
         .MasterClock(MasterClock),
-        .Clock(clk),
+        .Clock(debouncerClock),
         .gameClock(gameClock)
     );
 
     Debouncer btnL(
-        .Clock(clk),
+        .Clock(debouncerClock),
         .Signal(ButtonLeft),
         .Enabled(leftPressed)
     );
 
     Debouncer btnR(
-        .Clock(clk),
+        .Clock(debouncerClock),
         .Signal(ButtonRight),
         .Enabled(rightPressed)
     );
     
     Debouncer btnU(
-        .Clock(clk),
+        .Clock(debouncerClock),
         .Signal(ButtonUp),
         .Enabled(upPressed)
     );
     
     Debouncer btnD(
-        .Clock(clk),
+        .Clock(debouncerClock),
         .Signal(ButtonDown),
         .Enabled(downPressed)
     );
     
     Debouncer btnC(
-        .Clock(clk),
+        .Clock(debouncerClock),
         .Signal(ButtonCenter),
         .Enabled(centerPressed)
     );
 
     VGAController(
         .Blocks(blocks),
-        .Clock(clk),
+        .Clock(debouncerClock),
         .RGB(VGArgb),
         .HSync(VGAHSync),
         .VSync(VGAVSync)
     );
     
+    // setup user control (set the pressed button to reg buttonPressed)
+    always @ (posedge debouncerClock) begin
+        if (leftPressed) begin
+            buttonPressed = `BTN_LEFT;
+        end
+        
+        if (rightPressed) begin
+            buttonPressed = `BTN_RIGHT;
+        end
+    
+        if (upPressed) begin
+            buttonPressed = `BTN_UP;
+        end
+        
+        if (downPressed) begin
+            buttonPressed = `BTN_DOWN;
+        end
+        
+        if (centerPressed) begin
+            buttonPressed = `BTN_CENTER;
+        end
+    end
+    
+    // change snake moving direction based on button pressed
+    always @ (posedge debouncerClock) begin
+        case (buttonPressed)
+            `BTN_LEFT: snakeDir[snakeHead_V][snakeHead_H] = `DIR_LEFT;
+            `BTN_RIGHT: snakeDir[snakeHead_V][snakeHead_H] = `DIR_RIGHT;
+            `BTN_UP: snakeDir[snakeHead_V][snakeHead_H] = `DIR_UP;
+            `BTN_DOWN: snakeDir[snakeHead_V][snakeHead_H] = `DIR_DOWN;
+            `BTN_CENTER: pauseEnable = ~pauseEnable;
+            default: $display ("OOPS");
+        endcase
+    end
+    
     // snake moving mechanism
     always @ (posedge gameClock) begin
-        // setup the position of snakeHead pointer
-        snakeHeadDir = snakeDir[snakeHead_V][snakeHead_H];
-        case (snakeHeadDir)
-            DIR_UP: begin
-                        snakeHead_V = snakeHead_V + 1;
-                    end
-            DIR_DOWN: begin
-                        snakeHead_V = snakeHead_V - 1;
-                    end
-            DIR_LEFT: begin
-                        snakeHead_H = snakeHead_H - 1;
-                    end
-            DIR_RIGHT: begin
-                        snakeHead_H = snakeHead_H + 1;
-                    end
-            default: $display ("OOPS");
-        endcase
+        if (!pauseEnable) begin
+            // setup the position of snakeHead pointer
+            snakeHeadDir = snakeDir[snakeHead_V][snakeHead_H];
+            case (snakeHeadDir)
+                `DIR_UP: begin
+                            snakeHead_V = snakeHead_V + 1;
+                        end
+                `DIR_DOWN: begin
+                            snakeHead_V = snakeHead_V - 1;
+                        end
+                `DIR_LEFT: begin
+                            snakeHead_H = snakeHead_H - 1;
+                        end
+                `DIR_RIGHT: begin
+                            snakeHead_H = snakeHead_H + 1;
+                        end
+                default: $display ("OOPS");
+            endcase
         
-        // setup the position of snakeTail pointer
-        case (snakeDir[snakeTail_V][snakeTail_H])
-            DIR_UP: begin
-                        snakeTail_V = snakeTail_V + 1;
-                    end
-            DIR_DOWN: begin
-                        snakeTail_V = snakeTail_V - 1;
-                    end
-            DIR_LEFT: begin
-                        snakeTail_H = snakeTail_H - 1;
-                    end
-            DIR_RIGHT: begin
-                        snakeTail_H = snakeTail_H + 1;
-                    end
-            default: $display ("OOPS");
-        endcase
+            // setup the position of snakeTail pointer
+            case (snakeDir[snakeTail_V][snakeTail_H])
+                DIR_UP: begin
+                            snakeTail_V = snakeTail_V + 1;
+                        end
+                DIR_DOWN: begin
+                            snakeTail_V = snakeTail_V - 1;
+                        end
+                DIR_LEFT: begin
+                            snakeTail_H = snakeTail_H - 1;
+                        end
+                DIR_RIGHT: begin
+                            snakeTail_H = snakeTail_H + 1;
+                        end
+                default: $display ("OOPS");
+            endcase
         
-        blocks[snakeHead_V][snakeHead_H] = `BLOCK_SNAKE;
-        blocks[snakeTail_V][snakeTail_H] = `BLOCK_EMPTY;
-        snakeDir[snakeHead_V][snakeHead_H] = snakeHeadDir;  // set the new head's dir to the previous head dir
+            blocks[snakeHead_V][snakeHead_H] = `BLOCK_SNAKE;
+            blocks[snakeTail_V][snakeTail_H] = `BLOCK_EMPTY;
+            snakeDir[snakeHead_V][snakeHead_H] = snakeHeadDir;  // set the new head's dir to the previous head dir
+        end
     end
+
 
 endmodule
