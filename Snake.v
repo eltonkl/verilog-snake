@@ -16,18 +16,18 @@ module Snake(
     
     reg [`BITS_PER_BLOCK-1:0] blocks [0:`GRID_HEIGHT-1] [0:`GRID_WIDTH-1];
     reg [`BITS_PER_DIR-1:0] snakeDir [0:`GRID_HEIGHT-1] [0:`GRID_WIDTH-1];
-    reg [0:$clog2(`GRID_HEIGHT)-1] snakeHead_V; // y-coordinate
-    reg [0:$clog2(`GRID_WIDTH)-1] snakeHead_H;  // x-coordinate
-    reg [0:$clog2(`GRID_HEIGHT)-1] snakeTail_V;
-    reg [0:$clog2(`GRID_WIDTH)-1]snakeTail_H;
-    reg [0:$clog2(`GRID_HEIGHT)-1] food_V;
-    reg [0:$clog2(`GRID_WIDTH)-1] food_H;
-    reg [BITS_PER_DIR] snakeHeadDir;
-    reg leftPressed;
-    reg rightPressed;
-    reg upPressed;
-    reg downPressed;
-    reg centerPressed;
+    reg [$clog2(`GRID_HEIGHT)-1:0] snakeHead_V; // y-coordinate
+    reg [$clog2(`GRID_WIDTH)-1:0] snakeHead_H;  // x-coordinate
+    reg [$clog2(`GRID_HEIGHT)-1:0] snakeTail_V;
+    reg [$clog2(`GRID_WIDTH)-1:0]snakeTail_H;
+    reg [$clog2(`GRID_HEIGHT)-1:0] food_V;
+    reg [$clog2(`GRID_WIDTH)-1:0] food_H;
+    reg [BITS_PER_DIR-1:0] snakeHeadDir;
+    wire leftPressed;
+    wire rightPressed;
+    wire upPressed;
+    wire downPressed;
+    wire centerPressed;
     reg [2:0] buttonPressed;
     reg pauseEnable;
     
@@ -36,12 +36,6 @@ module Snake(
     //wire clk;
 
     initial begin
-        // set the button pressed signals to 0 (not enable)
-        leftPressed = 0;
-        rightPressed = 0;
-        upPressed = 0;
-        downPressed = 0;
-        centerPressed = 0;
         pauseEnable = 0;    // not pause
 
         for (i = 0; i < `GRID_HEIGHT; i = i + 1) begin
@@ -103,7 +97,7 @@ module Snake(
         .Enabled(centerPressed)
     );
 
-    VGAController(
+    VGAController vgaC(
         .Blocks(blocks),
         .Clock(debouncerClock),
         .RGB(VGArgb),
@@ -183,7 +177,8 @@ module Snake(
                         end
                 default: $display ("OOPS");
             endcase
-        
+            
+            // TODO: check and kill snake!!
             blocks[snakeHead_V][snakeHead_H] = `BLOCK_SNAKE;
             blocks[snakeTail_V][snakeTail_H] = `BLOCK_EMPTY;
             snakeDir[snakeHead_V][snakeHead_H] = snakeHeadDir;  // set the new head's dir to the previous head dir
