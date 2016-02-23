@@ -16,19 +16,19 @@ module Snake(
     
     reg [`BITS_PER_BLOCK-1:0] blocks [0:`GRID_HEIGHT-1] [0:`GRID_WIDTH-1];
     reg [`BITS_PER_DIR-1:0] snakeDir [0:`GRID_HEIGHT-1] [0:`GRID_WIDTH-1];
-    reg snakeHead_V [0:$clog2(`GRID_HEIGHT)-1]; // y-coordinate
-    reg snakeHead_H [0:$clog2(`GRID_WIDTH)-1];  // x-coordinate
-    reg snakeTail_V [0:$clog2(`GRID_HEIGHT)-1];
-    reg snakeTail_H [0:$clog2(`GRID_WIDTH)-1];
-    reg food_V [0:$clog2(`GRID_HEIGHT)-1];
-    reg food_H [0:$clog2(`GRID_WIDTH)-1];
-    reg snakeHeadDir [BITS_PER_DIR];
+    reg [0:$clog2(`GRID_HEIGHT)-1] snakeHead_V; // y-coordinate
+    reg [0:$clog2(`GRID_WIDTH)-1] snakeHead_H;  // x-coordinate
+    reg [0:$clog2(`GRID_HEIGHT)-1] snakeTail_V;
+    reg [0:$clog2(`GRID_WIDTH)-1]snakeTail_H;
+    reg [0:$clog2(`GRID_HEIGHT)-1] food_V;
+    reg [0:$clog2(`GRID_WIDTH)-1] food_H;
+    reg [BITS_PER_DIR] snakeHeadDir;
     reg leftPressed;
     reg rightPressed;
     reg upPressed;
     reg downPressed;
     reg centerPressed;
-    reg buttonPressed[2:0];
+    reg [2:0] buttonPressed;
     reg pauseEnable;
     
     wire gameClock;
