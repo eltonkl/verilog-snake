@@ -20,8 +20,8 @@ module Snake(
     reg snakeHead_H [0:$clog2(`GRID_WIDTH)-1];  // x-coordinate
     reg snakeTail_V [0:$clog2(`GRID_HEIGHT)-1];
     reg snakeTail_H [0:$clog2(`GRID_WIDTH)-1];
-    reg food_V [0:`GRID_HEIGHT-1];
-    reg food_H [0:`GRID_WIDTH-1];
+    reg food_V [0:$clog2(`GRID_HEIGHT)-1];
+    reg food_H [0:$clog2(`GRID_WIDTH)-1];
     reg snakeHeadDir [BITS_PER_DIR];
     reg leftPressed;
     reg rightPressed;
@@ -31,8 +31,8 @@ module Snake(
     reg buttonPressed[2:0];
     reg pauseEnable;
     
-    reg gameClock;
-    reg debouncerClock;
+    wire gameClock;
+    wire debouncerClock;
     //wire clk;
 
     initial begin
