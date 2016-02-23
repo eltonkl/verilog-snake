@@ -7,7 +7,7 @@ module Debouncer(
 	reg step;
 	reg stepPrev;
 	
-	assign Enabled = step && !step_prev;
+	assign Enabled = step && !stepPrev;
 	
 	initial begin
 		step = 0;

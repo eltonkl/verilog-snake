@@ -2,10 +2,10 @@
 
 module VGAController(
     input [`BITS_PER_BLOCK-1:0]     Blocks [0:`GRID_HEIGHT-1] [0:`GRID_WIDTH-1],
-    input                           Clock,
+    input wire                      Clock,
     output reg [0:7]                RGB,
-    output                          HSync,
-    output                          VSync
+    output reg                      HSync,
+    output reg                      VSync
     );
 
     parameter hPeriod = `H_FRONT_PORCH + `H_SYNC_PULSE + `H_BACK_PORCH + `H_PIXELS;
@@ -42,14 +42,14 @@ module VGAController(
             HSync <= ~hPositive;
         end
         else begin
-            hSync <= hPositive;
+            HSync <= hPositive;
         end
 
         if (vCounter < `V_PIXELS + `V_FRONT_PORCH || vCounter > `V_PIXELS + `V_FRONT_PORCH + `V_SYNC_PULSE) begin
-            VSync <= ~VPositive;
+            VSync <= ~vPositive;
         end
         else begin
-            VSync <= VPositive;
+            VSync <= vPositive;
         end
     end
 

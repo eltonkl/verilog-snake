@@ -66,9 +66,9 @@ module SegController(
                 7: segment = `SEG_PATTERN_SEVEN;
                 8: segment = `SEG_PATTERN_EIGHT;
                 9: segment = `SEG_PATTERN_NINE;
-                `LETTER_H: segment = `SEG_PATTERN_H
-                `LETTER_I: segment = `SEG_PATTERN_I
-                `LETTER_G: segment = `SEG_PATTERN_G
+                `LETTER_H: segment = `SEG_PATTERN_H;
+                `LETTER_I: segment = `SEG_PATTERN_I;
+                `LETTER_G: segment = `SEG_PATTERN_G;
                 default: segment = `SEG_PATTERN_ZERO;
             endcase
         end
