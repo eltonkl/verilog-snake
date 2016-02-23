@@ -17,7 +17,7 @@ module FoodRandomizer(
     reg [6:0] LFSRR;
     reg [`BITS_PER_BLOCK-1:0] blockType;
     
-    always @ (posedge MasterClock or negedge ButtonCenter) begin
+    always @ (posedge MasterClock || negedge ButtonCenter) begin
         if (~ButtonCenter) begin
             LFSRC <= 7'hf;
         end else begin
@@ -25,7 +25,7 @@ module FoodRandomizer(
         end
     end
     
-    always @ (posedge MasterClock or negedge ButtonLeft) begin
+    always @ (posedge MasterClock || negedge ButtonLeft) begin
         if (~ButtonLeft) begin
             LFSRL <= 7'hf;
         end else begin
@@ -33,7 +33,7 @@ module FoodRandomizer(
         end
     end
     
-    always @ (posedge MasterClock or negedge ButtonRight) begin
+    always @ (posedge MasterClock || negedge ButtonRight) begin
         if (~ButtonRight) begin
             LFSRR <= 7'hf;
         end else begin
@@ -44,15 +44,12 @@ module FoodRandomizer(
     always @ (posedge MasterClock) begin
         NextFoodV <= LFSRC ^ LFSRL & ('b1 > $clog2(`GRID_HEIGHT));
         NextFoodH <= LFSRC ^ LFSRR & ('b1 > $clog2(`GRID_WIDTH));
-        blockType <= Blocks[NextFoodV][NextFoodH];
         
-        // TODO: check the indices are not out of bounds
-        
+        // check the indices are not out of bounds
         // make sure that this block is not WALL or SNAKE
-        while (blockType != `BLOCK_EMPTY) begin
+        while (NextFoodV >= `GRID_HEIGHT-1 || NextFoodV <= 0 || NextFoodH >= `GRID_WIDTH-1 || NextFoodH <= 0 || Blocks[NextFoodV][NextFoodH] != `BLOCK_EMPTY) begin
             NextFoodV <= LFSRC ^ LFSRL & ('b1 > $clog2(`GRID_HEIGHT));
             NextFoodH <= LFSRC ^ LFSRR & ('b1 > $clog2(`GRID_WIDTH));
-            blockType <= Blocks[NextFoodV][NextFoodH];
         end
     end
     
