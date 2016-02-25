@@ -21,12 +21,17 @@ module Snake(
     reg [$clog2(`GRID_HEIGHT)-1:0] snakeTail_V;
     reg [$clog2(`GRID_WIDTH)-1:0]snakeTail_H;
     reg [BITS_PER_DIR-1:0] snakeHeadDir;
-    reg [$clog2(`GRID_HEIGHT)-1:0] curFoodV;    // coordinates for current food
-    reg [$clog2(`GRID_WIDTH)-1:0] curFoodH;
+    
+    // food pointers
+    //reg [$clog2(`GRID_HEIGHT)-1:0] curFoodV;    // coordinates for current food
+    //reg [$clog2(`GRID_WIDTH)-1:0] curFoodH;
     reg [$clog2(`GRID_HEIGHT)-1:0] nextFoodV;   // the real values we are using (for next food)
-    reg [$clog2(`GRID_WIDTH)-1:0] nextFoodH;
+    reg [$clog2(`GRID_WIDTH)-1:0] nextFoodH;    // we only update this (from values of p) when we need to
     reg [$clog2(`GRID_HEIGHT)-1:0] pNextFoodV;  // value we get from FoodRandomizer
     reg [$clog2(`GRID_WIDTH)-1:0] pNextFoodH;
+    
+    // states
+    reg pauseEnable;
     
     wire leftPressed;
     wire rightPressed;
@@ -34,7 +39,6 @@ module Snake(
     wire downPressed;
     wire centerPressed;
     reg [2:0] buttonPressed;
-    reg pauseEnable;
     
     wire gameClock;
     wire debouncerClock;
@@ -66,9 +70,9 @@ module Snake(
         blocks[snakeHead_V][snakeHead_H] = `BLOCK_SNAKE;
         
         // initialize food
-        curFoodV = 30;
-        curFoodH = 30;
-        blocks[curFoodV][curFoodH] = `BLOCK_FOOD;
+        //curFoodV = 30;
+        //curFoodH = 30;
+        blocks[30][30] = `BLOCK_FOOD;
     end
 
     ClockDivider cd(
@@ -166,44 +170,61 @@ module Snake(
     always @ (posedge gameClock) begin
         if (!pauseEnable) begin
             // setup the position of snakeHead pointer
-            snakeHeadDir = snakeDir[snakeHead_V][snakeHead_H];
+            snakeHeadDir <= snakeDir[snakeHead_V][snakeHead_H];
             case (snakeHeadDir)
                 `DIR_UP: begin
-                            snakeHead_V = snakeHead_V + 1;
+                            snakeHead_V <= snakeHead_V + 1;
                         end
                 `DIR_DOWN: begin
-                            snakeHead_V = snakeHead_V - 1;
+                            snakeHead_V <= snakeHead_V - 1;
                         end
                 `DIR_LEFT: begin
-                            snakeHead_H = snakeHead_H - 1;
+                            snakeHead_H <= snakeHead_H - 1;
                         end
                 `DIR_RIGHT: begin
-                            snakeHead_H = snakeHead_H + 1;
-                        end
-                default: $display ("OOPS");
-            endcase
-        
-            // setup the position of snakeTail pointer
-            case (snakeDir[snakeTail_V][snakeTail_H])
-                DIR_UP: begin
-                            snakeTail_V = snakeTail_V + 1;
-                        end
-                DIR_DOWN: begin
-                            snakeTail_V = snakeTail_V - 1;
-                        end
-                DIR_LEFT: begin
-                            snakeTail_H = snakeTail_H - 1;
-                        end
-                DIR_RIGHT: begin
-                            snakeTail_H = snakeTail_H + 1;
+                            snakeHead_H <= snakeHead_H + 1;
                         end
                 default: $display ("OOPS");
             endcase
             
-            // TODO: check and kill snake!!
-            blocks[snakeHead_V][snakeHead_H] = `BLOCK_SNAKE;
-            blocks[snakeTail_V][snakeTail_H] = `BLOCK_EMPTY;
-            snakeDir[snakeHead_V][snakeHead_H] = snakeHeadDir;  // set the new head's dir to the previous head dir
+            // check if the will be head coordinate is the same as food coordinate
+            if (blocks[snakeHead_V][snakeHead_H] == `BLOCK_FOOD) begin
+                // food is eaten
+                blocks[snakeHead_V][snakeHead_H] <= `BLOCK_SNAKE;
+                blocks[nextFoodV][nextFoodH] <= `BLOCK_FOOD;
+                nextFoodV <= pNextFoodV;
+                nextFoodH <= pNextFoodH;
+            end else begin
+                // food is not eaten
+                // setup the position of snakeTail pointer
+                // first empty out the tail's block
+                blocks[snakeTail_V][snakeTail_H] <= `BLOCK_EMPTY;
+                case (snakeDir[snakeTail_V][snakeTail_H])
+                    DIR_UP: begin
+                                snakeTail_V <= snakeTail_V + 1;
+                            end
+                    DIR_DOWN: begin
+                                snakeTail_V <= snakeTail_V - 1;
+                            end
+                    DIR_LEFT: begin
+                                snakeTail_H <= snakeTail_H - 1;
+                            end
+                    DIR_RIGHT: begin
+                                snakeTail_H <= snakeTail_H + 1;
+                            end
+                    default: $display ("OOPS");
+                endcase
+            
+                // TODO: check and kill snake!!
+                blocks[snakeHead_V][snakeHead_H] <= `BLOCK_SNAKE;
+                snakeDir[snakeHead_V][snakeHead_H] <= snakeHeadDir;  // set the new head's dir to the previous head dir
+                
+                // because snake moves, we need to make sure next food coordinate is still valid
+                if (blocks[nextFoodV][nextFoodH] == `BLOCK_SNAKE) begin
+                    nextFoodV <= pNextFoodV;
+                    nextFoodH <= pNextFoodH;
+                end
+            end
         end
     end
 
