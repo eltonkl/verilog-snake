@@ -8,8 +8,8 @@ module FoodRandomizer(
         input wire ButtonUp,
         input wire ButtonDown,
         input wire ButtonCenter,
-        output reg [$clog2(`GRID_HEIGHT)-1:0] NextFoodV;
-        output reg [$clog2(`GRID_WIDTH)-1:0] NextFoodH;
+        output reg [$clog2(`GRID_HEIGHT)-1:0] NextFoodV,
+        output reg [$clog2(`GRID_WIDTH)-1:0] NextFoodH
     );
     
     reg [6:0] LFSRC;
@@ -17,7 +17,7 @@ module FoodRandomizer(
     reg [6:0] LFSRR;
     reg [`BITS_PER_BLOCK-1:0] blockType;
     
-    always @ (posedge MasterClock || negedge ButtonCenter) begin
+    always @ (posedge MasterClock or negedge ButtonCenter) begin
         if (~ButtonCenter) begin
             LFSRC <= 7'hf;
         end else begin
@@ -25,7 +25,7 @@ module FoodRandomizer(
         end
     end
     
-    always @ (posedge MasterClock || negedge ButtonLeft) begin
+    always @ (posedge MasterClock or negedge ButtonLeft) begin
         if (~ButtonLeft) begin
             LFSRL <= 7'hf;
         end else begin
@@ -33,7 +33,7 @@ module FoodRandomizer(
         end
     end
     
-    always @ (posedge MasterClock || negedge ButtonRight) begin
+    always @ (posedge MasterClock or negedge ButtonRight) begin
         if (~ButtonRight) begin
             LFSRR <= 7'hf;
         end else begin

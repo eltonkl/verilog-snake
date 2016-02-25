@@ -1,8 +1,8 @@
 module ClockDivider(
 	input		MasterClock,
-	output	reg	Clock
-	output  reg gameClock;
-	output  reg fastClock;  // for seg display
+	output	reg	Clock,
+	output  reg gameClock,
+	output  reg fastClock  // for seg display
 	);
 	
 	parameter GameClockBreakPoint = 50000000;   // 2Hz

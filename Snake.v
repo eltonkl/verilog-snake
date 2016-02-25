@@ -20,7 +20,7 @@ module Snake(
     reg [$clog2(`GRID_WIDTH)-1:0] snakeHead_H;  // x-coordinate
     reg [$clog2(`GRID_HEIGHT)-1:0] snakeTail_V;
     reg [$clog2(`GRID_WIDTH)-1:0]snakeTail_H;
-    reg [BITS_PER_DIR-1:0] snakeHeadDir;
+    reg [`BITS_PER_DIR-1:0] snakeHeadDir;
     
     // food pointers
     //reg [$clog2(`GRID_HEIGHT)-1:0] curFoodV;    // coordinates for current food
@@ -41,6 +41,10 @@ module Snake(
     reg [3:0] secondDigit;
     reg [3:0] thirdDigit;
     reg [3:0] fourthDigit;
+    
+    // other utilities
+    reg i;
+    reg j;
     
     wire leftPressed;
     wire rightPressed;
@@ -130,7 +134,7 @@ module Snake(
     );
 
     VGAController vgaC(
-        .Blocks(blocks),
+        .Blocks(blocks),    // TODO: can't pass 2D array
         .Clock(debouncerClock),
         .RGB(VGArgb),
         .HSync(VGAHSync),
@@ -138,7 +142,7 @@ module Snake(
     );
     
     FoodRandomizer fr(
-        .Blocks(blocks),
+        .Blocks(blocks),    // TODO: can't pass 2D array
         .MasterClock(MasterClock),
         .ButtonLeft(ButtonLeft),
         .ButtonRight(ButtonRight),
@@ -245,16 +249,16 @@ module Snake(
                     // first empty out the tail's block
                     blocks[snakeTail_V][snakeTail_H] <= `BLOCK_EMPTY;
                     case (snakeDir[snakeTail_V][snakeTail_H])
-                        DIR_UP: begin
+                        `DIR_UP: begin
                                     snakeTail_V <= snakeTail_V + 1;
                                 end
-                        DIR_DOWN: begin
+                        `DIR_DOWN: begin
                                     snakeTail_V <= snakeTail_V - 1;
                                 end
-                        DIR_LEFT: begin
+                        `DIR_LEFT: begin
                                     snakeTail_H <= snakeTail_H - 1;
                                 end
-                        DIR_RIGHT: begin
+                        `DIR_RIGHT: begin
                                     snakeTail_H <= snakeTail_H + 1;
                                 end
                         default: $display ("OOPS");
@@ -276,7 +280,7 @@ module Snake(
                     end
                 end // end food checking if statement
             end // end pauseEnable if statement
-        end else if
+        end else begin
             // game over bruh!
             
         end
