@@ -18,7 +18,11 @@ module ClockDivider(
 
 	always @ (posedge MasterClock) begin
 		clockCounter <= ~clockCounter;
-		Clock <= ~Clock && clockCounter;
+		//Clock <= ~Clock && clockCounter;
+		if (clockCounter) begin
+		    Clock <= ~Clock;
+		end
+		
 		
 		if (gameClocker == GameClockBreakPoint) begin
 		    gameClockCounter <= 0;
