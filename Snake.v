@@ -30,9 +30,17 @@ module Snake(
     reg [$clog2(`GRID_HEIGHT)-1:0] pNextFoodV;  // value we get from FoodRandomizer
     reg [$clog2(`GRID_WIDTH)-1:0] pNextFoodH;
     
-    // states
+    // game states
     reg pauseEnable;
     reg gameOver;
+    reg [$clog2(`GRID_HEIGHT*`GRID_WIDTH)-1:0] score;
+    
+    // seg control
+    reg segEnable;
+    reg [3:0] firstDigit;
+    reg [3:0] secondDigit;
+    reg [3:0] thirdDigit;
+    reg [3:0] fourthDigit;
     
     wire leftPressed;
     wire rightPressed;
@@ -43,11 +51,18 @@ module Snake(
     
     wire gameClock;
     wire debouncerClock;
+    wire fastClock;
     //wire clk;
 
     initial begin
         pauseEnable = 0;    // not pause
         gameOver = 0;       // game not over
+        score = 0;          // score starts from 0
+        segEnable = 1;
+        firstDigit = 0;
+        secondDigit = 0;
+        thirdDigit = 0;
+        fourthDigit = 0;
 
         for (i = 0; i < `GRID_HEIGHT; i = i + 1) begin
             for (j = 0; j < `GRID_WIDTH; j = j + 1) begin
@@ -80,7 +95,8 @@ module Snake(
     ClockDivider cd(
         .MasterClock(MasterClock),
         .Clock(debouncerClock),
-        .gameClock(gameClock)
+        .gameClock(gameClock),
+        .fastClock(fastClock)
     );
 
     Debouncer btnL(
@@ -131,6 +147,17 @@ module Snake(
         .ButtonCenter(ButtonCenter),
         .NextFoodV(pNextFoodV),
         .NextFoodH(pNextFoodH)
+    );
+    
+    SegController sc(
+        Clock(fastClock),
+        En(segEnable),
+        FirstDigit(firstDigit),
+        SecondDigit(secondDigit),
+        ThirdDigit(thirdDigit),
+        FourthDigit(fourthDigit),
+        A(An),
+        C(Seg)
     );
     
     // setup user control (set the pressed button to reg buttonPressed)
@@ -198,6 +225,20 @@ module Snake(
                     blocks[nextFoodV][nextFoodH] <= `BLOCK_FOOD;
                     nextFoodV <= pNextFoodV;
                     nextFoodH <= pNextFoodH;
+                    score <= score + 1;
+                    firstDigit <= firstDigit + 1;
+                    if (firstDigit == 10) begin
+                        firstDigit <= 0;
+                        secondDigit <= secondDigit + 1;
+                        if (secondDigit == 10) begin
+                            secondDigit <= 0;
+                            thirdDigit <= thirdDigit + 1;
+                            if (thirdDigit == 10) begin
+                                thirdDigit <= 0;
+                                fourthDigit <= fourthDigit + 1;
+                            end
+                        end
+                    end
                 end else begin
                     // food is not eaten
                     // setup the position of snakeTail pointer
