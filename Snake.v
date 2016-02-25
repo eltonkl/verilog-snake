@@ -32,6 +32,7 @@ module Snake(
     
     // states
     reg pauseEnable;
+    reg gameOver;
     
     wire leftPressed;
     wire rightPressed;
@@ -46,6 +47,7 @@ module Snake(
 
     initial begin
         pauseEnable = 0;    // not pause
+        gameOver = 0;       // game not over
 
         for (i = 0; i < `GRID_HEIGHT; i = i + 1) begin
             for (j = 0; j < `GRID_WIDTH; j = j + 1) begin
@@ -166,65 +168,76 @@ module Snake(
         endcase
     end
     
+    // main game playing mechanism
     // snake moving mechanism
     always @ (posedge gameClock) begin
-        if (!pauseEnable) begin
-            // setup the position of snakeHead pointer
-            snakeHeadDir <= snakeDir[snakeHead_V][snakeHead_H];
-            case (snakeHeadDir)
-                `DIR_UP: begin
-                            snakeHead_V <= snakeHead_V + 1;
-                        end
-                `DIR_DOWN: begin
-                            snakeHead_V <= snakeHead_V - 1;
-                        end
-                `DIR_LEFT: begin
-                            snakeHead_H <= snakeHead_H - 1;
-                        end
-                `DIR_RIGHT: begin
-                            snakeHead_H <= snakeHead_H + 1;
-                        end
-                default: $display ("OOPS");
-            endcase
-            
-            // check if the will be head coordinate is the same as food coordinate
-            if (blocks[snakeHead_V][snakeHead_H] == `BLOCK_FOOD) begin
-                // food is eaten
-                blocks[snakeHead_V][snakeHead_H] <= `BLOCK_SNAKE;
-                blocks[nextFoodV][nextFoodH] <= `BLOCK_FOOD;
-                nextFoodV <= pNextFoodV;
-                nextFoodH <= pNextFoodH;
-            end else begin
-                // food is not eaten
-                // setup the position of snakeTail pointer
-                // first empty out the tail's block
-                blocks[snakeTail_V][snakeTail_H] <= `BLOCK_EMPTY;
-                case (snakeDir[snakeTail_V][snakeTail_H])
-                    DIR_UP: begin
-                                snakeTail_V <= snakeTail_V + 1;
+        if (!gameOver) begin
+            if (!pauseEnable) begin
+                // setup the position of snakeHead pointer
+                snakeHeadDir <= snakeDir[snakeHead_V][snakeHead_H];
+                case (snakeHeadDir)
+                    `DIR_UP: begin
+                                snakeHead_V <= snakeHead_V + 1;
                             end
-                    DIR_DOWN: begin
-                                snakeTail_V <= snakeTail_V - 1;
+                    `DIR_DOWN: begin
+                                snakeHead_V <= snakeHead_V - 1;
                             end
-                    DIR_LEFT: begin
-                                snakeTail_H <= snakeTail_H - 1;
+                    `DIR_LEFT: begin
+                                snakeHead_H <= snakeHead_H - 1;
                             end
-                    DIR_RIGHT: begin
-                                snakeTail_H <= snakeTail_H + 1;
+                    `DIR_RIGHT: begin
+                                snakeHead_H <= snakeHead_H + 1;
                             end
                     default: $display ("OOPS");
                 endcase
             
-                // TODO: check and kill snake!!
-                blocks[snakeHead_V][snakeHead_H] <= `BLOCK_SNAKE;
-                snakeDir[snakeHead_V][snakeHead_H] <= snakeHeadDir;  // set the new head's dir to the previous head dir
-                
-                // because snake moves, we need to make sure next food coordinate is still valid
-                if (blocks[nextFoodV][nextFoodH] == `BLOCK_SNAKE) begin
+                // check if the will be head coordinate is the same as food coordinate
+                if (blocks[snakeHead_V][snakeHead_H] == `BLOCK_FOOD) begin
+                    // food is eaten
+                    blocks[snakeHead_V][snakeHead_H] <= `BLOCK_SNAKE;
+                    blocks[nextFoodV][nextFoodH] <= `BLOCK_FOOD;
                     nextFoodV <= pNextFoodV;
                     nextFoodH <= pNextFoodH;
-                end
-            end
+                end else begin
+                    // food is not eaten
+                    // setup the position of snakeTail pointer
+                    // first empty out the tail's block
+                    blocks[snakeTail_V][snakeTail_H] <= `BLOCK_EMPTY;
+                    case (snakeDir[snakeTail_V][snakeTail_H])
+                        DIR_UP: begin
+                                    snakeTail_V <= snakeTail_V + 1;
+                                end
+                        DIR_DOWN: begin
+                                    snakeTail_V <= snakeTail_V - 1;
+                                end
+                        DIR_LEFT: begin
+                                    snakeTail_H <= snakeTail_H - 1;
+                                end
+                        DIR_RIGHT: begin
+                                    snakeTail_H <= snakeTail_H + 1;
+                                end
+                        default: $display ("OOPS");
+                    endcase
+            
+                    // check and kill snake
+                    if (blocks[snakeHead_V][snakeHead_H] != `BLOCK_EMPTY) begin
+                        // because we already checked food, if it's not empty, it's either SNAKE or WALL
+                        gameOver = 1;
+                    end else begin
+                        blocks[snakeHead_V][snakeHead_H] <= `BLOCK_SNAKE;
+                        snakeDir[snakeHead_V][snakeHead_H] <= snakeHeadDir;  // set the new head's dir to the previous head dir
+                
+                        // because snake moves, we need to make sure next food coordinate is still valid
+                        if (blocks[nextFoodV][nextFoodH] == `BLOCK_SNAKE) begin
+                            nextFoodV <= pNextFoodV;
+                            nextFoodH <= pNextFoodH;
+                        end
+                    end
+                end // end food checking if statement
+            end // end pauseEnable if statement
+        end else if
+            // game over bruh!
+            
         end
     end
 
