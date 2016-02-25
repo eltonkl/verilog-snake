@@ -20,9 +20,14 @@ module Snake(
     reg [$clog2(`GRID_WIDTH)-1:0] snakeHead_H;  // x-coordinate
     reg [$clog2(`GRID_HEIGHT)-1:0] snakeTail_V;
     reg [$clog2(`GRID_WIDTH)-1:0]snakeTail_H;
-    reg [$clog2(`GRID_HEIGHT)-1:0] food_V;
-    reg [$clog2(`GRID_WIDTH)-1:0] food_H;
     reg [BITS_PER_DIR-1:0] snakeHeadDir;
+    reg [$clog2(`GRID_HEIGHT)-1:0] curFoodV;    // coordinates for current food
+    reg [$clog2(`GRID_WIDTH)-1:0] curFoodH;
+    reg [$clog2(`GRID_HEIGHT)-1:0] nextFoodV;   // the real values we are using (for next food)
+    reg [$clog2(`GRID_WIDTH)-1:0] nextFoodH;
+    reg [$clog2(`GRID_HEIGHT)-1:0] pNextFoodV;  // value we get from FoodRandomizer
+    reg [$clog2(`GRID_WIDTH)-1:0] pNextFoodH;
+    
     wire leftPressed;
     wire rightPressed;
     wire upPressed;
@@ -59,6 +64,11 @@ module Snake(
         snakeTail_H = 20;
         snakeDir[snakeHead_V][snakeHead_H] = `DIR_RIGHT;
         blocks[snakeHead_V][snakeHead_H] = `BLOCK_SNAKE;
+        
+        // initialize food
+        curFoodV = 30;
+        curFoodH = 30;
+        blocks[curFoodV][curFoodH] = `BLOCK_FOOD;
     end
 
     ClockDivider cd(
@@ -103,6 +113,18 @@ module Snake(
         .RGB(VGArgb),
         .HSync(VGAHSync),
         .VSync(VGAVSync)
+    );
+    
+    FoodRandomizer fr(
+        .Blocks(blocks),
+        .MasterClock(MasterClock),
+        .ButtonLeft(ButtonLeft),
+        .ButtonRight(ButtonRight),
+        .ButtonUp(ButtonUp),
+        .ButtonDown(ButtonDown),
+        .ButtonCenter(ButtonCenter),
+        .NextFoodV(pNextFoodV),
+        .NextFoodH(pNextFoodH)
     );
     
     // setup user control (set the pressed button to reg buttonPressed)
