@@ -43,7 +43,7 @@ module VGAController(
     wire [3:0] xBlockIndex = (hCounter - hBP)/`BLOCK_WIDTH;
     wire [3:0] yBlockIndex = (vCounter - vBP)/`BLOCK_HEIGHT;
 
-    reg [(`BITS_PER_BLOCK)-1:0] blocks [0:`GRID_HEIGHT-1] [0:`GRID_WIDTH-1];
+    wire [(`BITS_PER_BLOCK)-1:0] blocks [0:`GRID_HEIGHT-1] [0:`GRID_WIDTH-1];
     
     genvar unpackHeight, unpackWidth;
     generate
