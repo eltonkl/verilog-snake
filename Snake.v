@@ -27,8 +27,8 @@ module Snake(
     //reg [$clog2(`GRID_WIDTH)-1:0] curFoodH;
     reg [$clog2(`GRID_HEIGHT)-1:0] nextFoodV;   // the real values we are using (for next food)
     reg [$clog2(`GRID_WIDTH)-1:0] nextFoodH;    // we only update this (from values of p) when we need to
-    reg [$clog2(`GRID_HEIGHT)-1:0] pNextFoodV;  // value we get from FoodRandomizer
-    reg [$clog2(`GRID_WIDTH)-1:0] pNextFoodH;
+    wire [$clog2(`GRID_HEIGHT)-1:0] pNextFoodV;  // value we get from FoodRandomizer
+    wire [$clog2(`GRID_WIDTH)-1:0] pNextFoodH;
     
     // game states
     reg pauseEnable;
@@ -43,8 +43,8 @@ module Snake(
     reg [3:0] fourthDigit;
     
     // other utilities
-    reg i;
-    reg j;
+    reg [4:0] i;
+    reg [4:0] j;
     
     wire leftPressed;
     wire rightPressed;
@@ -83,17 +83,17 @@ module Snake(
         end
         
         // initialize snake starting point
-        snakeHead_V = 20;
-        snakeHead_H = 20;
-        snakeTail_V = 20;
-        snakeTail_H = 20;
+        snakeHead_V = 10;
+        snakeHead_H = 10;
+        snakeTail_V = 10;
+        snakeTail_H = 10;
         snakeDir[snakeHead_V][snakeHead_H] = `DIR_RIGHT;
         blocks[snakeHead_V][snakeHead_H] = `BLOCK_SNAKE;
         
         // initialize food
         //curFoodV = 30;
         //curFoodH = 30;
-        blocks[30][30] = `BLOCK_FOOD;
+        blocks[5][5] = `BLOCK_FOOD;
     end
 
     ClockDivider cd(
@@ -154,14 +154,14 @@ module Snake(
     );
     
     SegController sc(
-        Clock(fastClock),
-        En(segEnable),
-        FirstDigit(firstDigit),
-        SecondDigit(secondDigit),
-        ThirdDigit(thirdDigit),
-        FourthDigit(fourthDigit),
-        A(An),
-        C(Seg)
+        .Clock(fastClock),
+        .En(segEnable),
+        .FirstDigit(firstDigit),
+        .SecondDigit(secondDigit),
+        .ThirdDigit(thirdDigit),
+        .FourthDigit(fourthDigit),
+        .A(An),
+        .C(Seg)
     );
     
     // setup user control (set the pressed button to reg buttonPressed)
