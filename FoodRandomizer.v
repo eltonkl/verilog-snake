@@ -1,7 +1,7 @@
 `include "Constants.v"
 
 module FoodRandomizer(
-        input [`BITS_PER_BLOCK-1:0]  Blocks [0:`GRID_HEIGHT-1] [0:`GRID_WIDTH-1],
+        input wire [0:(`BITS_PER_BLOCK * `GRID_HEIGHT * `GRID_WIDTH)-1] Blocks,
         input wire MasterClock,
         input wire ButtonLeft,
         input wire ButtonRight,
@@ -16,6 +16,17 @@ module FoodRandomizer(
     reg [6:0] LFSRL;
     reg [6:0] LFSRR;
     reg [`BITS_PER_BLOCK-1:0] blockType;
+    
+    // unpack
+    wire [(`BITS_PER_BLOCK)-1:0] blocks [0:`GRID_HEIGHT-1] [0:`GRID_WIDTH-1];
+    genvar unpackHeight, unpackWidth;
+    generate
+        for (unpackHeight = 0; unpackHeight < (`GRID_HEIGHT); unpackHeight = unpackHeight + 1) begin : for_outer
+            for (unpackWidth = 0; unpackWidth < (`GRID_WIDTH); unpackWidth = unpackWidth + 1) begin : for_inner
+                assign blocks[unpackHeight][unpackWidth] = { Blocks[(`BITS_PER_BLOCK * ((unpackHeight * `GRID_WIDTH) + unpackWidth))], Blocks[(`BITS_PER_BLOCK * ((unpackHeight * `GRID_WIDTH) + unpackWidth)) + 1] };
+            end
+        end
+    endgenerate
     
     always @ (posedge MasterClock or negedge ButtonCenter) begin
         if (~ButtonCenter) begin
@@ -47,7 +58,8 @@ module FoodRandomizer(
         
         // check the indices are not out of bounds
         // make sure that this block is not WALL or SNAKE
-        while (NextFoodV >= `GRID_HEIGHT-1 || NextFoodV <= 0 || NextFoodH >= `GRID_WIDTH-1 || NextFoodH <= 0 || Blocks[NextFoodV][NextFoodH] != `BLOCK_EMPTY) begin
+        
+        while (NextFoodV >= `GRID_HEIGHT-1 || NextFoodV <= 0 || NextFoodH >= `GRID_WIDTH-1 || NextFoodH <= 0 || blocks[NextFoodV][NextFoodH] != `BLOCK_EMPTY) begin
             NextFoodV <= LFSRC ^ LFSRL & ('b1 > $clog2(`GRID_HEIGHT));
             NextFoodH <= LFSRC ^ LFSRR & ('b1 > $clog2(`GRID_WIDTH));
         end
