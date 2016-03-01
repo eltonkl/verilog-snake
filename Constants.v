@@ -1,12 +1,5 @@
 `define H_PIXELS        640
-`define H_FRONT_PORCH   16
-`define H_SYNC_PULSE    96
-`define H_BACK_PORCH    48
-
 `define V_PIXELS        480
-`define V_FRONT_PORCH   10
-`define V_SYNC_PULSE    2
-`define V_BACK_PORCH    33
 
 `define BITS_PER_BLOCK  2
 `define BLOCK_EMPTY     2'b00
@@ -30,3 +23,29 @@
 `define COLOR_WALL      8'b11111111
 `define COLOR_SNAKE     8'b00011100
 `define COLOR_EMPTY     8'b00000000
+
+`define BTN_UP          3'b000
+`define BTN_DOWN        3'b001
+`define BTN_LEFT        3'b010
+`define BTN_RIGHT       3'b011
+`define BTN_CENTER      3'b100
+
+`define LETTER_H        10
+`define LETTER_I        11
+`define LETTER_G        12
+`define LETTER_BLANK    13
+
+`define SEG_PATTERN_ONE     'b1111001
+`define SEG_PATTERN_TWO     'b0100100
+`define SEG_PATTERN_THREE   'b0110000
+`define SEG_PATTERN_FOUR    'b0011001
+`define SEG_PATTERN_FIVE    'b0010010
+`define SEG_PATTERN_SIX     'b0000010
+`define SEG_PATTERN_SEVEN   'b1111000
+`define SEG_PATTERN_EIGHT   'b0000000
+`define SEG_PATTERN_NINE    'b0010000
+`define SEG_PATTERN_ZERO    'b1000000
+`define SEG_PATTERN_H       'b0001001
+`define SEG_PATTERN_I       'b1111001
+`define SEG_PATTERN_G       'b0000010
+`define SEG_PATTERN_OFF     'b1111111
