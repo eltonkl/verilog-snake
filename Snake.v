@@ -74,10 +74,10 @@ module Snake(
         gameOver = 0;       // game not over
         score = 0;          // score starts from 0
         segEnable = 1;
-        firstDigit = 0;
-        secondDigit = 0;
-        thirdDigit = 0;
-        fourthDigit = 0;
+        firstDigit = 8;
+        secondDigit = 8;
+        thirdDigit = 7;
+        fourthDigit = 5;
         buttonPressed = `BTN_NONE;
 
         for (i = 0; i < `GRID_HEIGHT; i = i + 1) begin
@@ -177,25 +177,24 @@ module Snake(
     );
     
     // setup user control (set the pressed button to reg buttonPressed)
-    always @ (posedge debouncerClock) begin
-        if (leftPressed) begin
-            buttonPressed = `BTN_LEFT;
+    always @ (*) begin
+        if (leftPressed == 1) begin
+            buttonPressed <= `BTN_LEFT;
         end
-        
-        if (rightPressed) begin
-            buttonPressed = `BTN_RIGHT;
+        else if (rightPressed == 1) begin
+            buttonPressed <= `BTN_RIGHT;
         end
+        else if (upPressed == 1) begin
+            buttonPressed <= `BTN_UP;
+        end 
+        else if (downPressed == 1) begin
+            buttonPressed <= `BTN_DOWN;
+        end
+    end
     
-        if (upPressed) begin
-            buttonPressed = `BTN_UP;
-        end
-        
-        if (downPressed) begin
-            buttonPressed = `BTN_DOWN;
-        end
-        
-        if (centerPressed) begin
-            buttonPressed = `BTN_CENTER;
+    always @ (*) begin
+        if (centerPressed == 1) begin
+            pauseEnable <= ~pauseEnable;
         end
     end
     
@@ -214,43 +213,75 @@ module Snake(
     */
     
     // main game playing mechanism
-    // snake moving mechanism
+    //8 snake moving mechanism
     always @ (posedge gameClock) begin
         /*
-        case (buttonPressed)
-            `BTN_LEFT: snakeDir[snakeHead_V][snakeHead_H] = `DIR_LEFT;
-            `BTN_RIGHT: snakeDir[snakeHead_V][snakeHead_H] = `DIR_RIGHT;
-            `BTN_UP: snakeDir[snakeHead_V][snakeHead_H] = `DIR_UP;
-            `BTN_DOWN: snakeDir[snakeHead_V][snakeHead_H] = `DIR_DOWN;
-            `BTN_CENTER: pauseEnable = ~pauseEnable;
-            default: $display ("OOPS");
-        endcase
-        buttonPressed = `BTN_NONE;
+        if (leftPressed) begin
+            snakeDir[snakeHead_V][snakeHead_H] = `DIR_LEFT;
+        end
+        else if (rightPressed) begin
+            snakeDir[snakeHead_V][snakeHead_H] = `DIR_RIGHT;
+        end
+        else if (upPressed) begin
+            snakeDir[snakeHead_V][snakeHead_H] = `DIR_UP;
+        end 
+        else if (downPressed) begin
+            snakeDir[snakeHead_V][snakeHead_H] = `DIR_DOWN;
+        end
+        else if (centerPressed) begin
+            pauseEnable = ~pauseEnable;
+        end
         */
+        //if (gameClock == 1) begin
+        snakeHeadDir = snakeDir[snakeHead_V][snakeHead_H];
+        case (buttonPressed)
+            `BTN_LEFT: begin
+                if (snakeHeadDir != `DIR_RIGHT) begin
+                    snakeDir[snakeHead_V][snakeHead_H] = `DIR_LEFT;
+                end
+                firstDigit = 1;
+            end
+            `BTN_RIGHT: begin
+                if (snakeHeadDir != `DIR_LEFT) begin
+                    snakeDir[snakeHead_V][snakeHead_H] = `DIR_RIGHT;
+                end
+                firstDigit = 2;
+            end
+            `BTN_UP: begin
+                if (snakeHeadDir != `DIR_DOWN) begin
+                    snakeDir[snakeHead_V][snakeHead_H] = `DIR_UP;
+                end
+                firstDigit = 3;
+            end
+            `BTN_DOWN: begin
+                if (snakeHeadDir != `DIR_UP) begin
+                    snakeDir[snakeHead_V][snakeHead_H] = `DIR_DOWN;
+                end
+                firstDigit = 4;
+            end
+            default: firstDigit = 5;
+        endcase
+
         if (!gameOver) begin
             if (!pauseEnable) begin
                 // setup the position of snakeHead pointer
-                //snakeHeadDir <= snakeDir[snakeHead_V][snakeHead_H];
-                case (snakeDir[snakeHead_V][snakeHead_H])
+                snakeHeadDir = snakeDir[snakeHead_V][snakeHead_H];
+                case (snakeHeadDir)
                     `DIR_UP: begin
-                                snakeHead_V <= snakeHead_V + 1'b1;
-                                blocks[snakeHead_V + 1'b1][snakeHead_H] <= `BLOCK_SNAKE;
-                                snakeDir[snakeHead_V + 1'b1][snakeHead_H] <= snakeDir[snakeHead_V][snakeHead_H];
+                                snakeDir[snakeHead_V + 1][snakeHead_H] = snakeHeadDir;
+                                snakeHead_V = snakeHead_V + 1'b1;
                             end
                     `DIR_DOWN: begin
-                                snakeHead_V <= snakeHead_V - 1'b1;
-                                blocks[snakeHead_V - 1'b1][snakeHead_H] <= `BLOCK_SNAKE;
-                                snakeDir[snakeHead_V + 1'b1][snakeHead_H] <= snakeDir[snakeHead_V][snakeHead_H];
+                                snakeDir[snakeHead_V - 1][snakeHead_H] = snakeHeadDir;
+                                snakeHead_V = snakeHead_V - 1'b1;
                             end
                     `DIR_LEFT: begin
-                                snakeHead_H <= snakeHead_H - 1'b1;
-                                blocks[snakeHead_V][snakeHead_H - 1'b1] <= `BLOCK_SNAKE;
-                                snakeDir[snakeHead_V][snakeHead_H - 1'b1] <= snakeDir[snakeHead_V][snakeHead_H];
+                                snakeDir[snakeHead_V][snakeHead_H - 1] = snakeHeadDir;
+                                snakeHead_H = snakeHead_H - 1'b1;
                             end
                     `DIR_RIGHT: begin
-                                snakeHead_H <= snakeHead_H + 1'b1;
-                                blocks[snakeHead_V][snakeHead_H + 1'b1] <= `BLOCK_SNAKE;
-                                snakeDir[snakeHead_V][snakeHead_H + 1'b1] <= snakeDir[snakeHead_V][snakeHead_H];
+                                snakeDir[snakeHead_V][snakeHead_H + 1] = snakeHeadDir;
+                                snakeHead_H = snakeHead_H + 1'b1;
                             end
                     default: $display ("OOPS");
                 endcase
@@ -258,49 +289,44 @@ module Snake(
                 // check if the will be head coordinate is the same as food coordinate
                 if (blocks[snakeHead_V][snakeHead_H] == `BLOCK_FOOD) begin
                     // food is eaten
-                    blocks[snakeHead_V][snakeHead_H] <= `BLOCK_SNAKE;
+                    blocks[snakeHead_V][snakeHead_H] = `BLOCK_SNAKE;
                     
-                    /*
-                    blocks[nextFoodV][nextFoodH] <= `BLOCK_FOOD;
-                    nextFoodV <= pNextFoodV;
-                    nextFoodH <= pNextFoodH;
-                    score <= score + 1'b1;
-                    firstDigit <= firstDigit + 1'b1;
-                    if (firstDigit == 10) begin
-                        firstDigit <= 0;
-                        secondDigit <= secondDigit + 1'b1;
-                        if (secondDigit == 10) begin
-                            secondDigit <= 0;
-                            thirdDigit <= thirdDigit + 1'b1;
-                            if (thirdDigit == 10) begin
-                                thirdDigit <= 0;
-                                fourthDigit <= fourthDigit + 1'b1;
+                    //blocks[nextFoodV][nextFoodH] <= `BLOCK_FOOD;
+                    //nextFoodV <= pNextFoodV;
+                    //nextFoodH <= pNextFoodH;
+                    score = score + 1'b1;
+                    /*fourthDigit = fourthDigit + 1'b1;
+                    if (fourthDigit == 10) begin
+                        fourthDigit = 0;
+                        thirdDigit = thirdDigit + 1'b1;
+                        if (thirdDigit == 10) begin
+                            thirdDigit = 0;
+                            secondDigit = secondDigit + 1'b1;
+                            if (secondDigit == 10) begin
+                                secondDigit = 0;
+                                firstDigit = firstDigit + 1'b1;
                             end
                         end
-                    end
-                    */
+                    end*/
+                    
                     
                 end else begin
                     // food is not eaten
                     // setup the position of snakeTail pointer
                     // first empty out the tail's block
-                    //blocks[snakeTail_V][snakeTail_H] <= `BLOCK_EMPTY;
+                    blocks[snakeTail_V][snakeTail_H] = `BLOCK_EMPTY;
                     case (snakeDir[snakeTail_V][snakeTail_H])
                         `DIR_UP: begin
-                                    snakeTail_V <= snakeTail_V + 1'b1;
-                                    blocks[snakeTail_V + 1'b1][snakeTail_H] <= `BLOCK_EMPTY;
+                                    snakeTail_V = snakeTail_V + 1'b1;
                                 end
                         `DIR_DOWN: begin
-                                    snakeTail_V <= snakeTail_V - 1'b1;
-                                    blocks[snakeTail_V - 1'b1][snakeTail_H] <= `BLOCK_EMPTY;
+                                    snakeTail_V = snakeTail_V - 1'b1;
                                 end
                         `DIR_LEFT: begin
-                                    snakeTail_H <= snakeTail_H - 1'b1;
-                                    blocks[snakeTail_V][snakeTail_H - 1'b1] <= `BLOCK_EMPTY;
+                                    snakeTail_H = snakeTail_H - 1'b1;
                                 end
                         `DIR_RIGHT: begin
-                                    snakeTail_H <= snakeTail_H + 1'b1;
-                                    blocks[snakeTail_V][snakeTail_H + 1'b1] <= `BLOCK_EMPTY;
+                                    snakeTail_H = snakeTail_H + 1'b1;
                                 end
                         default: $display ("OOPS");
                     endcase
@@ -310,13 +336,13 @@ module Snake(
                         // because we already checked food, if it's not empty, it's either SNAKE or WALL
                         gameOver = 1;
                     end else begin
-                        //blocks[snakeHead_V][snakeHead_H] <= `BLOCK_SNAKE;
-                        snakeDir[snakeHead_V][snakeHead_H] <= snakeHeadDir;  // set the new head's dir to the previous head dir
+                        blocks[snakeHead_V][snakeHead_H] = `BLOCK_SNAKE;
+                        //snakeDir[snakeHead_V][snakeHead_H] = snakeHeadDir;  // set the new head's dir to the previous head dir
                 
                         // because snake moves, we need to make sure next food coordinate is still valid
                         if (blocks[nextFoodV][nextFoodH] == `BLOCK_SNAKE) begin
-                            nextFoodV <= pNextFoodV;
-                            nextFoodH <= pNextFoodH;
+                            nextFoodV = pNextFoodV;
+                            nextFoodH = pNextFoodH;
                         end
                     end
                 end // end food checking if statement
