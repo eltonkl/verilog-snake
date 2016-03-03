@@ -58,6 +58,17 @@ module Snake(
     wire fastClock;
     //wire clk;
 
+    wire [0:(`BITS_PER_BLOCK * `GRID_HEIGHT * `GRID_WIDTH)-1] packBlocks;
+    genvar h, w;
+    generate
+        for (h = 0; h < (`GRID_HEIGHT); h = h + 1) begin : for_outer
+            for (w = 0; w < (`GRID_WIDTH); w = w + 1) begin : for_inner
+                assign packBlocks[(h * `GRID_WIDTH * `BITS_PER_BLOCK) + (w * `BITS_PER_BLOCK)] = blocks[h][w][0];
+                assign packBlocks[(h * `GRID_WIDTH * `BITS_PER_BLOCK) + (w * `BITS_PER_BLOCK) + 1] = blocks[h][w][1];
+            end
+        end
+    endgenerate
+
     initial begin
         pauseEnable = 0;    // not pause
         gameOver = 0;       // game not over
@@ -134,7 +145,7 @@ module Snake(
     );
 
     VGAController vgaC(
-        .Blocks(blocks),    // TODO: can't pass 2D array
+        .Blocks(packBlocks),
         .Clock(debouncerClock),
         .RGB(VGArgb),
         .HSync(VGAHSync),
@@ -142,7 +153,7 @@ module Snake(
     );
     
     FoodRandomizer fr(
-        .Blocks(blocks),    // TODO: can't pass 2D array
+        .Blocks(packBlocks),
         .MasterClock(MasterClock),
         .ButtonLeft(ButtonLeft),
         .ButtonRight(ButtonRight),
