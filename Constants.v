@@ -1,12 +1,5 @@
 `define H_PIXELS        640
-`define H_FRONT_PORCH   16
-`define H_SYNC_PULSE    96
-`define H_BACK_PORCH    48
-
 `define V_PIXELS        480
-`define V_FRONT_PORCH   10
-`define V_SYNC_PULSE    2
-`define V_BACK_PORCH    33
 
 `define BITS_PER_BLOCK  2
 `define BLOCK_EMPTY     2'b00
