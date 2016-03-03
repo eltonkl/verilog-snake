@@ -16,8 +16,8 @@ module VGAController(
     parameter hFP = 784;        // Beginning of horizontal front porch 
     parameter vBP = 31;         // End of vertical back porch
     parameter vFP = 511;        // Beginning of vertical front porch
-    parameter vPolarity = 0;    // Polarity when vertical pin is active
-    parameter hPolarity = 0;    // Polarity when horizontal pin is active
+    parameter vPolarity = 1'b0;    // Polarity when vertical pin is active
+    parameter hPolarity = 1'b0;    // Polarity when horizontal pin is active
     parameter rgbInactive = 8'b00000000;
     // Active horizontal video region: hFP - hBP = 640
     // Active vertical video region: vFP - vBP = 480
