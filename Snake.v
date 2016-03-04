@@ -28,7 +28,7 @@ module Snake(
     reg [xCoordBits-1:0] newHeadX;
     reg [numPiecesBits-1:0] snakeTail;
     reg [`BITS_PER_DIR-1:0] currentDir;
-    reg collidesWithFood;
+    reg checkCollision;
 
     parameter deadTicks = 12500000;
     parameter segCurrentScore = 1'b0;
@@ -165,7 +165,7 @@ module Snake(
         
         currentDir = `DIR_RIGHT;
         currentState = `STATE_DEAD;
-        collidesWithFood = 0;
+        checkCollision = 0;
         segType = segCurrentScore;
     end
 
@@ -206,7 +206,7 @@ module Snake(
                 foodX = 10;
                 
                 currentDir = `DIR_RIGHT;
-                collidesWithFood = 0;
+                checkCollision = 0;
                 segType = segCurrentScore;
             end
             else begin
@@ -215,7 +215,7 @@ module Snake(
                     segType = ~segType;
                 end
                 else begin
-                    deadCounter = deadCounter + 1;
+                    deadCounter = deadCounter + 1'b1;
                 end
             end
         end
@@ -249,8 +249,15 @@ module Snake(
                 if (currentDir != `DIR_UP)
                     currentDir = `DIR_DOWN;
             end
-            
-            if (gameClock == 1) begin
+
+            if (checkCollision == 1) begin
+                for (i = 1; i < numSnakePieces; i = i + 1) begin
+                    if (snakeY[i] == snakeY[0] && snakeX[i] == snakeX[0])
+                        currentState = `STATE_DEAD;
+                end
+                checkCollision = 0;
+            end
+            else if (gameClock == 1) begin
                 case (currentDir)
                     `DIR_UP: begin
                         newHeadY = snakeY[0] - 1'b1;
@@ -278,7 +285,7 @@ module Snake(
                 snakeX[0] = newHeadX;
                 if (newHeadY == foodY && newHeadX == foodX) begin
                     if (snakeTail != numSnakePieces - 1) begin
-                        snakeTail = snakeTail + 1;
+                        snakeTail = snakeTail + 1'b1;
                     end
                     incrementScore();
                     foodY = 0;
@@ -299,13 +306,11 @@ module Snake(
                     newHeadX == 0 || newHeadX == (`GRID_WIDTH - 1)) begin
                     currentState = `STATE_DEAD;
                 end
-                for (j = 1; j < numSnakePieces; j = j + 1) begin
-                    if (snakeY[j] == newHeadY && snakeX[j] == newHeadX)
-                        currentState = `STATE_DEAD;
-                end
-                if (currentState == `STATE_DEAD)
-                    updateHighScore();
+                checkCollision = 1;
             end
+            
+            if (currentState == `STATE_DEAD)
+                updateHighScore();
         end
     end
     

@@ -5,7 +5,7 @@ module ClockDivider(
 	output  reg fastClock  // for seg display
 	);
 	
-	parameter GameClockBreakPoint = 25000000;
+	parameter GameClockBreakPoint = 15000000;
 	parameter FastClockBreakPoint = 160000;
 	
 	reg clockCounter;

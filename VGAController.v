@@ -59,11 +59,11 @@ module VGAController(
     
     always @ (posedge Clock) begin
         if (hCounter < hPixels - 1)
-            hCounter <= hCounter + 1;
+            hCounter <= hCounter + 1'b1;
         else begin
             hCounter <= 0;
             if (vCounter < vLines - 1)
-                vCounter <= vCounter + 1;
+                vCounter <= vCounter + 1'b1;
             else
                 vCounter <= 0;
         end
