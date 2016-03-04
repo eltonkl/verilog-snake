@@ -1,12 +1,6 @@
 `define H_PIXELS            640
 `define V_PIXELS            480
 
-`define BITS_PER_BLOCK      2
-`define BLOCK_EMPTY         2'b00
-`define BLOCK_SNAKE         2'b01
-`define BLOCK_FOOD          2'b10
-`define BLOCK_WALL          2'b11
-
 `define BITS_PER_DIR        2
 `define DIR_UP              2'b00
 `define DIR_DOWN            2'b01
@@ -31,13 +25,6 @@
 `define STATE_DEAD          2'b01
 `define STATE_ALIVE         2'b10
 `define STATE_FIND_FOOD     2'b11
-
-`define BTN_UP              3'b000
-`define BTN_DOWN            3'b001
-`define BTN_LEFT            3'b010
-`define BTN_RIGHT           3'b011
-`define BTN_CENTER          3'b100
-`define BTN_NONE            3'b111
 
 `define LETTER_H            10
 `define LETTER_I            11

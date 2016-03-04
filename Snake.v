@@ -19,8 +19,6 @@ module Snake(
     parameter numSnakePieces = `NUM_SNAKE_PIECES;
     parameter numPiecesBits = $clog2(numSnakePieces);
     
-    //reg [`BITS_PER_BLOCK-1:0] blocks [0:`GRID_HEIGHT-1] [0:`GRID_WIDTH-1];
-    
     reg [`BITS_PER_STATE-1:0] currentState;
     reg [yCoordBits-1:0] snakeY [0:numSnakePieces-1]; // y-coordinate
     reg [xCoordBits-1:0] snakeX [0:numSnakePieces-1];  // x-coordinate
