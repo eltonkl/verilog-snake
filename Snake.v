@@ -53,6 +53,28 @@ module Snake(
     wire gameClock;
     wire clock;
     wire fastClock;
+    
+    // pack snakeY
+    wire [0:(yCoordBits * `NUM_SNAKE_PIECES)-1] packSnakeY;
+    genvar h, k;
+    generate
+        for (h = 0; h < (`NUM_SNAKE_PIECES); h = h + 1) begin : for_outer
+            for (k = 0; k < yCoordBits; k = k + 1) begin : for_inner
+                assign packSnakeY[(h * yCoordBits) + k] = snakeY[h][k];
+            end
+        end
+    endgenerate
+    
+    // pack snakeX
+    wire [0:(xCoordBits * `NUM_SNAKE_PIECES)-1] packSnakeX;
+    genvar w, l;
+    generate
+        for (w = 0; w < (`NUM_SNAKE_PIECES); w = w + 1) begin : for_outer
+            for (l = 0; l < xCoordBits; l = l + 1) begin : for_inner
+                assign packSnakeX[(w * xCoordBits) + l] = snakeX[w][l];
+            end
+        end
+    endgenerate
 
     initial begin
         for (i = 1; i < numSnakePieces; i = i + 1) begin
