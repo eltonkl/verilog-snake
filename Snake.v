@@ -81,7 +81,7 @@ module Snake(
         highThirdDigit = 0;
         highFourthDigit = 0;
         buttonPressed = `BTN_NONE;
-
+        
         for (i = 0; i < `GRID_WIDTH; i = i + 1) begin
             blocks[0][i] = `BLOCK_WALL;
             blocks[`GRID_HEIGHT-1][i] = `BLOCK_WALL;
@@ -91,7 +91,30 @@ module Snake(
             blocks[i][`GRID_WIDTH-1] = `BLOCK_WALL;
         end
 
-        initializeGame();
+        pauseEnable = 0;    // not pause
+        gameOver = 0;       // game not over
+        score = 0;          // score starts from 0
+        firstDigit = 0;
+        secondDigit = 0;
+        thirdDigit = 0;
+        fourthDigit = 0;
+        
+        for (i = 1; i < `GRID_HEIGHT - 1; i = i + 1) begin
+            for (j = 1; j < `GRID_WIDTH - 1; j = j + 1) begin
+                blocks[i][j] = `BLOCK_EMPTY;
+            end
+        end
+
+        // initialize snake starting point
+        snakeHeadV = 1;
+        snakeHeadH = 1;
+        snakeTailV = 1;
+        snakeTailH = 1;
+        snakeDir[1][1] = `DIR_RIGHT;
+        blocks[1][1] = `BLOCK_SNAKE;
+
+        // initialize food
+        blocks[1][9] = `BLOCK_FOOD;
     end
 
     ClockDivider cd(
@@ -171,24 +194,23 @@ module Snake(
             if (gameClock) begin
                 moveSnake();
             end
-
             else if (leftPressed) begin
-                
+                snakeDir[snakeHeadV][snakeHeadH] = `DIR_LEFT;
             end
             else if (rightPressed) begin
-                
+                snakeDir[snakeHeadV][snakeHeadH] = `DIR_RIGHT;
             end
             else if (downPressed) begin
-                
+                snakeDir[snakeHeadV][snakeHeadH] = `DIR_DOWN;
             end
             else if (upPressed) begin
-                
+                snakeDir[snakeHeadV][snakeHeadH] = `DIR_UP;
             end
         end
         else if (gameOver) begin
             // Display high score
             if (centerPressed) begin
-                initializeGame();
+                reinitializeGame();
             end
         end
         else begin
@@ -196,67 +218,76 @@ module Snake(
         end
     end
 
-    task moveSnake; begin
-        snakeHeadDir = snakeDir[snakeHeadV][snakeHeadH];
-        case (snakeHeadDir)
-            `DIR_UP: begin
-                snakeHeadV = snakeHeadV - 1'b1;
-            end
-            `DIR_DOWN: begin
-                snakeHeadV = snakeHeadV + 1'b1;
-            end
-            `DIR_LEFT: begin
-                snakeHeadH = snakeHeadH - 1'b1;
-            end
-            `DIR_RIGHT: begin
-                snakeHeadH = snakeHeadH + 1'b1;
-            end
-        endcase
-        if (blocks[snakeHeadV][snakeHeadH] == `BLOCK_WALL ||
-            blocks[snakeHeadV][snakeHeadH] == `BLOCK_SNAKE) begin
-            gameOver = 1;
-        end
-        else begin
-            if (blocks[snakeHeadV][snakeHeadH] != `BLOCK_FOOD) begin
-                snakeTailDir = snakeDir[snakeTailV][snakeTailH];
-                blocks[snakeTailV][snakeTailH] = `BLOCK_EMPTY;
-                case (snakeTailDir)
-                    `DIR_UP: begin
-                        snakeTailV = snakeTailV - 1'b1;
-                    end
-                    `DIR_DOWN: begin
-                        snakeTailV = snakeTailV + 1'b1;
-                    end
-                    `DIR_LEFT: begin
-                        snakeTailH = snakeTailH - 1'b1;
-                    end
-                    `DIR_RIGHT: begin
-                        snakeTailH = snakeTailH + 1'b1;
-                    end
-                endcase
+    task moveSnake;
+        begin
+            snakeHeadDir = snakeDir[snakeHeadV][snakeHeadH];
+            case (snakeHeadDir)
+                `DIR_UP: begin
+                    snakeHeadV = snakeHeadV - 1'b1;
+                end
+                `DIR_DOWN: begin
+                    snakeHeadV = snakeHeadV + 1'b1;
+                end
+                `DIR_LEFT: begin
+                    snakeHeadH = snakeHeadH - 1'b1;
+                end
+                `DIR_RIGHT: begin
+                    snakeHeadH = snakeHeadH + 1'b1;
+                end
+            endcase
+            if (blocks[snakeHeadV][snakeHeadH] == `BLOCK_WALL ||
+                blocks[snakeHeadV][snakeHeadH] == `BLOCK_SNAKE) begin
+                gameOver = 1;
             end
             else begin
-                incrementScore();
+                if (blocks[snakeHeadV][snakeHeadH] != `BLOCK_FOOD) begin
+                    snakeTailDir = snakeDir[snakeTailV][snakeTailH];
+                    blocks[snakeTailV][snakeTailH] = `BLOCK_EMPTY;
+                    case (snakeTailDir)
+                        `DIR_UP: begin
+                            snakeTailV = snakeTailV - 1'b1;
+                        end
+                        `DIR_DOWN: begin
+                            snakeTailV = snakeTailV + 1'b1;
+                        end
+                        `DIR_LEFT: begin
+                            snakeTailH = snakeTailH - 1'b1;
+                        end
+                        `DIR_RIGHT: begin
+                            snakeTailH = snakeTailH + 1'b1;
+                        end
+                    endcase
+                end
+                else begin
+                    incrementScore();
+                end
+                blocks[snakeHeadV][snakeHeadH] = `BLOCK_SNAKE;
+                snakeDir[snakeHeadV][snakeHeadH] = snakeHeadDir;
             end
-            blocks[snakeHeadV][snakeHeadH] = `BLOCK_SNAKE;
-            snakeDir[snakeHeadV][snakeHeadH] = snakeHeadDir;
         end
-    end
     endtask
 
     task incrementScore; begin
-        fourthDigit = fourthDigit + 1'b1;
-        if (fourthDigit == 10) begin
+        if (fourthDigit + 1 == 10) begin
             fourthDigit = 0;
-            thirdDigit = thirdDigit + 1'b1;
-            if (thirdDigit == 10) begin
+            if (thirdDigit + 1 == 10) begin
                 thirdDigit = 0;
-                secondDigit = secondDigit + 1'b1;
-                if (secondDigit == 10) begin
+                if (secondDigit + 1 == 10) begin
                     secondDigit = 0;
-                    firstDigit = firstDigit + 1'b1;
+                    if (firstDigit + 1 != 10) begin
+                        firstDigit = firstDigit + 1'b1;
+                    end
+                end
+                else begin
+                    secondDigit = secondDigit + 1'b1;
                 end
             end
+            else begin
+                thirdDigit = thirdDigit + 1'b1;
+            end
+        end
+        else begin
+            fourthDigit = fourthDigit + 1'b1;
         end
         
         if (firstDigit > highFirstDigit) begin
@@ -286,7 +317,7 @@ module Snake(
     end
     endtask
 
-    task initializeGame; begin
+    task reinitializeGame; begin
         pauseEnable = 0;
         gameOver = 0;
         segEnable = 1;
@@ -294,21 +325,21 @@ module Snake(
         secondDigit = 0;
         thirdDigit = 0;
         fourthDigit = 0;
-
+        
         for (i = 1; i < `GRID_HEIGHT - 1; i = i + 1) begin
             for (j = 1; j < `GRID_WIDTH - 1; j = j + 1) begin
                 blocks[i][j] = `BLOCK_EMPTY;
             end
         end
-        
+
         // initialize snake starting point
         snakeHeadV = 1;
         snakeHeadH = 1;
         snakeTailV = 1;
         snakeTailH = 1;
-        snakeDir[snakeHeadV][snakeHeadH] = `DIR_RIGHT;
-        blocks[snakeHeadV][snakeHeadH] = `BLOCK_SNAKE;
-        
+        snakeDir[1][1] = `DIR_RIGHT;
+        blocks[1][1] = `BLOCK_SNAKE;
+
         // initialize food
         blocks[1][9] = `BLOCK_FOOD;
     end

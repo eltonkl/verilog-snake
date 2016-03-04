@@ -6,7 +6,7 @@ module Debouncer(
 	
     reg step;
     reg stepPrev;
-    reg [31:0] counter;
+    reg [20:0] counter;
 
     assign Enabled = step && !stepPrev;
 
@@ -17,7 +17,7 @@ module Debouncer(
     end
 
     always @ (posedge Clock) begin
-        if (counter == 40000) begin
+        if (counter == 20000) begin
             counter <= 0;
             step <= Signal;
         end else begin
