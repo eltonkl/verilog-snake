@@ -1,11 +1,8 @@
 `include "Constants.v"
 
 module VGAController(
-    // TODO: need to pack/unpack array
-    // input wire [yCoordBits-1:0] snakeY [0:numSnakePieces-1], // y-coordinate
-    // input wire [xCoordBits-1:0] snakeX [0:numSnakePieces-1],  // x-coordinate
-    input wire [0:(yCoordBits * `NUM_SNAKE_PIECES)-1] packSnakeY;
-    input wire [0:(xCoordBits * `NUM_SNAKE_PIECES)-1] packSnakeX;
+    input wire [0:(yCoordBits * `NUM_SNAKE_PIECES)-1] packSnakeY,
+    input wire [0:(xCoordBits * `NUM_SNAKE_PIECES)-1] packSnakeX,
     input wire [yCoordBits-1:0] foodY,
     input wire [xCoordBits-1:0] foodX,
     input wire                          Clock,
@@ -21,9 +18,7 @@ module VGAController(
 
     wire [yCoordBits-1:0] snakeY [0:numSnakePieces-1]; // y-coordinate
     wire [xCoordBits-1:0] snakeX [0:numSnakePieces-1];  // x-coordinate
-    //reg [yCoordBits-1:0] foodY;
-    //reg [xCoordBits-1:0] foodX;
-    reg [numPiecesBits-1:0] i;
+    reg [numPiecesBits:0] i;
     
     // unpack into snakeY
     genvar h, k;
@@ -38,23 +33,12 @@ module VGAController(
     // unpack into snakeX
     genvar w, l;
     generate
-        for (w = 0; w < (`NUM_SNAKE_PIECES); w = w + 1) begin : for_outer
-            for (l = 0; l < xCoordBits; l = l + 1) begin : for_inner
+        for (w = 0; w < (`NUM_SNAKE_PIECES); w = w + 1) begin : for_outer2
+            for (l = 0; l < xCoordBits; l = l + 1) begin : for_inner2
                 assign snakeX[w][l] = packSnakeX[(w * xCoordBits) + l];
             end
         end
     endgenerate
-    
-    initial begin
-        for (i = 1; i < numSnakePieces; i = i + 1) begin
-            snakeY[i] = 0;
-            snakeX[i] = 0;
-        end
-        snakeY[0] = 1;
-        snakeX[0] = 1;
-        foodY = 1;
-        foodX = 8;
-    end
 
     parameter hPixels = 800;    // Pixels per horizontal line
     parameter vLines = 521;     // Vertical lines per frame
