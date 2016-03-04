@@ -3,10 +3,12 @@ module Debouncer(
     input wire  Signal,
     output wire Enabled
     );
-	
+
+    parameter numTicks = 12500;
+
     reg step;
     reg stepPrev;
-    reg [20:0] counter;
+    reg [$clog2(numTicks)-1:0] counter;
 
     assign Enabled = step && !stepPrev;
 
@@ -17,14 +19,12 @@ module Debouncer(
     end
 
     always @ (posedge Clock) begin
-        if (counter == 20000) begin
+        if (counter == numTicks) begin
             counter <= 0;
             step <= Signal;
         end else begin
-            counter <= counter + 1;
+            counter <= counter + 1'b1;
         end
-
         stepPrev <= step;
     end
-
 endmodule

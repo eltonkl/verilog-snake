@@ -14,30 +14,37 @@ module Snake(
     output wire [3:0]   An
     );
     
-    reg [`BITS_PER_BLOCK-1:0] blocks [0:`GRID_HEIGHT-1] [0:`GRID_WIDTH-1];
-    reg [`BITS_PER_DIR-1:0] snakeDir [0:`GRID_HEIGHT-1] [0:`GRID_WIDTH-1];
-    reg [$clog2(`GRID_HEIGHT)-1:0] snakeHeadV; // y-coordinate
-    reg [$clog2(`GRID_WIDTH)-1:0] snakeHeadH;  // x-coordinate
-    reg [$clog2(`GRID_HEIGHT)-1:0] snakeTailV;
-    reg [$clog2(`GRID_WIDTH)-1:0]snakeTailH;
-    reg [`BITS_PER_DIR-1:0] snakeHeadDir;
-    reg [`BITS_PER_DIR-1:0] snakeTailDir;
+    parameter yCoordBits = $clog2(`GRID_HEIGHT);
+    parameter xCoordBits = $clog2(`GRID_WIDTH);
+    parameter numSnakePieces = `NUM_SNAKE_PIECES;
+    parameter numPiecesBits = $clog2(numSnakePieces);
     
-    // food pointers
-    //reg [$clog2(`GRID_HEIGHT)-1:0] curFoodV;    // coordinates for current food
-    //reg [$clog2(`GRID_WIDTH)-1:0] curFoodH;
-    //reg [$clog2(`GRID_HEIGHT)-1:0] nextFoodV;   // the real values we are using (for next food)
-    //reg [$clog2(`GRID_WIDTH)-1:0] nextFoodH;    // we only update this (from values of p) when we need to
-    //wire [$clog2(`GRID_HEIGHT)-1:0] pNextFoodV;  // value we get from FoodRandomizer
-    //wire [$clog2(`GRID_WIDTH)-1:0] pNextFoodH;
+    //reg [`BITS_PER_BLOCK-1:0] blocks [0:`GRID_HEIGHT-1] [0:`GRID_WIDTH-1];
     
-    // game states
-    reg pauseEnable;
-    reg gameOver;
-    reg [$clog2(`GRID_HEIGHT*`GRID_WIDTH)-1:0] score;
-    
+    reg [`BITS_PER_STATE-1:0] currentState;
+    reg [yCoordBits-1:0] snakeY [0:numSnakePieces-1]; // y-coordinate
+    reg [xCoordBits-1:0] snakeX [0:numSnakePieces-1];  // x-coordinate
+    reg [yCoordBits-1:0] newHeadY;
+    reg [xCoordBits-1:0] newHeadX;
+    reg [numPiecesBits-1:0] snakeTail;
+    reg [`BITS_PER_DIR-1:0] currentDir;
+    reg checkCollision;
+
+    parameter deadTicks = 12500000;
+    parameter segCurrentScore = 1'b0;
+    parameter segHighScore = 1'b1;
+    reg [23:0] deadCounter;
+    reg segType;
+
+    reg [yCoordBits-1:0] foodY;
+    reg [xCoordBits-1:0] foodX;
+
     // seg control
-    reg segEnable;
+    reg [3:0] segFirstDigit;
+    reg [3:0] segSecondDigit;
+    reg [3:0] segThirdDigit;
+    reg [3:0] segFourthDigit;
+    
     reg [3:0] firstDigit;
     reg [3:0] secondDigit;
     reg [3:0] thirdDigit;
@@ -49,73 +56,40 @@ module Snake(
     reg [3:0] highFourthDigit;
     
     // other utilities
-    reg [4:0] i;
-    reg [4:0] j;
+    reg [numPiecesBits:0] i;
+    reg [numPiecesBits:0] j;
     
     wire leftPressed;
     wire rightPressed;
     wire upPressed;
     wire downPressed;
     wire centerPressed;
-    reg [2:0] buttonPressed;
     
     wire gameClock;
     wire clock;
     wire fastClock;
-    //wire clk;
 
-    wire [0:(`BITS_PER_BLOCK * `GRID_HEIGHT * `GRID_WIDTH)-1] packBlocks;
-    genvar h, w;
+    // pack snakeY
+    wire [0:(yCoordBits * `NUM_SNAKE_PIECES)-1] packSnakeY;
+    genvar h, k;
     generate
-        for (h = 0; h < (`GRID_HEIGHT); h = h + 1) begin : for_outer
-            for (w = 0; w < (`GRID_WIDTH); w = w + 1) begin : for_inner
-                assign packBlocks[(h * `GRID_WIDTH * `BITS_PER_BLOCK) + (w * `BITS_PER_BLOCK)] = blocks[h][w][0];
-                assign packBlocks[(h * `GRID_WIDTH * `BITS_PER_BLOCK) + (w * `BITS_PER_BLOCK) + 1] = blocks[h][w][1];
+        for (h = 0; h < (`NUM_SNAKE_PIECES); h = h + 1) begin : for_outer
+            for (k = 0; k < yCoordBits; k = k + 1) begin : for_inner
+                assign packSnakeY[(h * yCoordBits) + k] = snakeY[h][k];
             end
         end
     endgenerate
-
-    initial begin
-        highFirstDigit = 0;
-        highSecondDigit = 0;
-        highThirdDigit = 0;
-        highFourthDigit = 0;
-        buttonPressed = `BTN_NONE;
-        
-        for (i = 0; i < `GRID_WIDTH; i = i + 1) begin
-            blocks[0][i] = `BLOCK_WALL;
-            blocks[`GRID_HEIGHT-1][i] = `BLOCK_WALL;
-        end
-        for (i = 1; i < `GRID_HEIGHT - 1; i = i + 1) begin
-            blocks[i][0] = `BLOCK_WALL;
-            blocks[i][`GRID_WIDTH-1] = `BLOCK_WALL;
-        end
-
-        pauseEnable = 0;    // not pause
-        gameOver = 0;       // game not over
-        score = 0;          // score starts from 0
-        firstDigit = 0;
-        secondDigit = 0;
-        thirdDigit = 0;
-        fourthDigit = 0;
-        
-        for (i = 1; i < `GRID_HEIGHT - 1; i = i + 1) begin
-            for (j = 1; j < `GRID_WIDTH - 1; j = j + 1) begin
-                blocks[i][j] = `BLOCK_EMPTY;
+    
+    // pack snakeX
+    wire [0:(xCoordBits * `NUM_SNAKE_PIECES)-1] packSnakeX;
+    genvar w, l;
+    generate
+        for (w = 0; w < (`NUM_SNAKE_PIECES); w = w + 1) begin : for_outer2
+            for (l = 0; l < xCoordBits; l = l + 1) begin : for_inner2
+                assign packSnakeX[(w * xCoordBits) + l] = snakeX[w][l];
             end
         end
-
-        // initialize snake starting point
-        snakeHeadV = 1;
-        snakeHeadH = 1;
-        snakeTailV = 1;
-        snakeTailH = 1;
-        snakeDir[1][1] = `DIR_RIGHT;
-        blocks[1][1] = `BLOCK_SNAKE;
-
-        // initialize food
-        blocks[1][9] = `BLOCK_FOOD;
-    end
+    endgenerate
 
     ClockDivider cd(
         .MasterClock(MasterClock),
@@ -155,141 +129,232 @@ module Snake(
     );
 
     VGAController vgaC(
-        .Blocks(packBlocks),
+        .packSnakeY(packSnakeY),
+        .packSnakeX(packSnakeX),
+        .foodY(foodY),
+        .foodX(foodX),
         .Clock(clock),
         .RGB(VGArgb),
         .HSync(VGAHSync),
         .VSync(VGAVSync)
     );
-    
-    FoodRandomizer fr(
-        .Blocks(packBlocks),
-        .MasterClock(MasterClock),
-        .ButtonLeft(ButtonLeft),
-        .ButtonRight(ButtonRight),
-        .ButtonUp(ButtonUp),
-        .ButtonDown(ButtonDown),
-        .ButtonCenter(ButtonCenter),
-        .NextFoodV(pNextFoodV),
-        .NextFoodH(pNextFoodH)
-    );
-    
-    SegController sc(
-        .Clock(fastClock),
-        .En(segEnable),
-        .FirstDigit(firstDigit),
-        .SecondDigit(secondDigit),
-        .ThirdDigit(thirdDigit),
-        .FourthDigit(fourthDigit),
-        .A(An),
-        .C(Seg)
-    );
 
-    always @ (posedge clock) begin
-        if (centerPressed) begin
-            pauseEnable = ~pauseEnable;
+    initial begin
+        firstDigit = 0;
+        secondDigit = 0;
+        thirdDigit = 0;
+        fourthDigit = 0;
+        
+        highFirstDigit = 0;
+        highSecondDigit = 0;
+        highThirdDigit = 0;
+        highFourthDigit = 0;
+        
+        deadCounter = 0;
+        
+        for (i = 1; i < numSnakePieces; i = i + 1) begin
+            snakeY[i] = 0;
+            snakeX[i] = 0;
         end
+        snakeTail = 0;
+        snakeY[0] = 5;
+        snakeX[0] = 5;
+        
+        foodY = 5;
+        foodX = 10;
+        
+        currentDir = `DIR_RIGHT;
+        currentState = `STATE_DEAD;
+        checkCollision = 0;
+        segType = segCurrentScore;
+    end
 
-        if (!pauseEnable && !gameOver) begin
-            if (gameClock) begin
-                moveSnake();
-            end
-            else if (leftPressed) begin
-                snakeDir[snakeHeadV][snakeHeadH] = `DIR_LEFT;
-            end
-            else if (rightPressed) begin
-                snakeDir[snakeHeadV][snakeHeadH] = `DIR_RIGHT;
-            end
-            else if (downPressed) begin
-                snakeDir[snakeHeadV][snakeHeadH] = `DIR_DOWN;
-            end
-            else if (upPressed) begin
-                snakeDir[snakeHeadV][snakeHeadH] = `DIR_UP;
-            end
-        end
-        else if (gameOver) begin
-            // Display high score
-            if (centerPressed) begin
-                reinitializeGame();
-            end
+    always @ (*) begin
+        if (segType == segHighScore) begin
+            segFirstDigit <= highFirstDigit;
+            segSecondDigit <= highSecondDigit;
+            segThirdDigit <= highThirdDigit;
+            segFourthDigit <= highFourthDigit;
         end
         else begin
-            // Game paused
+            segFirstDigit <= firstDigit;
+            segSecondDigit <= secondDigit;
+            segThirdDigit <= thirdDigit;
+            segFourthDigit <= fourthDigit;
         end
     end
 
-    task moveSnake;
-        begin
-            snakeHeadDir = snakeDir[snakeHeadV][snakeHeadH];
-            case (snakeHeadDir)
-                `DIR_UP: begin
-                    snakeHeadV = snakeHeadV - 1'b1;
+    always @ (posedge clock) begin
+        if (currentState == `STATE_DEAD) begin
+            if (centerPressed == 1) begin
+                currentState = `STATE_ALIVE;
+
+                firstDigit = 0;
+                secondDigit = 0;
+                thirdDigit = 0;
+                fourthDigit = 0;
+
+                for (i = 1; i < numSnakePieces; i = i + 1) begin
+                    snakeY[i] = 0;
+                    snakeX[i] = 0;
                 end
-                `DIR_DOWN: begin
-                    snakeHeadV = snakeHeadV + 1'b1;
-                end
-                `DIR_LEFT: begin
-                    snakeHeadH = snakeHeadH - 1'b1;
-                end
-                `DIR_RIGHT: begin
-                    snakeHeadH = snakeHeadH + 1'b1;
-                end
-            endcase
-            if (blocks[snakeHeadV][snakeHeadH] == `BLOCK_WALL ||
-                blocks[snakeHeadV][snakeHeadH] == `BLOCK_SNAKE) begin
-                gameOver = 1;
+                snakeTail = 0;
+                snakeY[0] = 5;
+                snakeX[0] = 5;
+                
+                foodY = 5;
+                foodX = 10;
+                
+                currentDir = `DIR_RIGHT;
+                checkCollision = 0;
+                segType = segCurrentScore;
             end
             else begin
-                if (blocks[snakeHeadV][snakeHeadH] != `BLOCK_FOOD) begin
-                    snakeTailDir = snakeDir[snakeTailV][snakeTailH];
-                    blocks[snakeTailV][snakeTailH] = `BLOCK_EMPTY;
-                    case (snakeTailDir)
-                        `DIR_UP: begin
-                            snakeTailV = snakeTailV - 1'b1;
-                        end
-                        `DIR_DOWN: begin
-                            snakeTailV = snakeTailV + 1'b1;
-                        end
-                        `DIR_LEFT: begin
-                            snakeTailH = snakeTailH - 1'b1;
-                        end
-                        `DIR_RIGHT: begin
-                            snakeTailH = snakeTailH + 1'b1;
-                        end
-                    endcase
+                if (deadCounter + 1 == deadTicks) begin
+                    deadCounter = 0;
+                    segType = ~segType;
                 end
                 else begin
-                    incrementScore();
+                    deadCounter = deadCounter + 1'b1;
                 end
-                blocks[snakeHeadV][snakeHeadH] = `BLOCK_SNAKE;
-                snakeDir[snakeHeadV][snakeHeadH] = snakeHeadDir;
             end
         end
-    endtask
-
-    task incrementScore; begin
-        if (fourthDigit + 1 == 10) begin
-            fourthDigit = 0;
-            if (thirdDigit + 1 == 10) begin
-                thirdDigit = 0;
-                if (secondDigit + 1 == 10) begin
-                    secondDigit = 0;
-                    if (firstDigit + 1 != 10) begin
-                        firstDigit = firstDigit + 1'b1;
-                    end
-                end
-                else begin
-                    secondDigit = secondDigit + 1'b1;
-                end
+        else if (currentState == `STATE_PAUSE) begin
+            if (centerPressed == 1) begin
+                currentState = `STATE_ALIVE;
             end
-            else begin
-                thirdDigit = thirdDigit + 1'b1;
-            end
+        end
+        else if (currentState == `STATE_FIND_FOOD) begin
+            foodX = 3;
+            foodY = 9;
+            currentState = `STATE_ALIVE;
         end
         else begin
-            fourthDigit = fourthDigit + 1'b1;
+            if (centerPressed == 1) begin
+                currentState = `STATE_PAUSE;
+            end
+            else if (leftPressed == 1) begin
+                if (currentDir != `DIR_RIGHT)
+                    currentDir = `DIR_LEFT;
+            end
+            else if (rightPressed == 1) begin
+                if (currentDir != `DIR_LEFT)
+                    currentDir = `DIR_RIGHT;
+            end
+            else if (upPressed == 1) begin
+                if (currentDir != `DIR_DOWN)
+                    currentDir = `DIR_UP;
+            end
+            else if (downPressed == 1) begin
+                if (currentDir != `DIR_UP)
+                    currentDir = `DIR_DOWN;
+            end
+
+            if (checkCollision == 1) begin
+                for (i = 1; i < numSnakePieces; i = i + 1) begin
+                    if (snakeY[i] == snakeY[0] && snakeX[i] == snakeX[0])
+                        currentState = `STATE_DEAD;
+                end
+                checkCollision = 0;
+            end
+            else if (gameClock == 1) begin
+                case (currentDir)
+                    `DIR_UP: begin
+                        newHeadY = snakeY[0] - 1'b1;
+                        newHeadX = snakeX[0];
+                    end
+                    `DIR_DOWN: begin
+                        newHeadY = snakeY[0] + 1'b1;
+                        newHeadX = snakeX[0];
+                    end
+                    `DIR_LEFT: begin
+                        newHeadY = snakeY[0];
+                        newHeadX = snakeX[0] - 1'b1;
+                    end
+                    `DIR_RIGHT: begin
+                        newHeadY = snakeY[0];
+                        newHeadX = snakeX[0] + 1'b1;
+                    end
+                endcase
+                
+                for (i = numSnakePieces - 1; i > 0; i = i - 1) begin
+                    snakeY[i] = snakeY[i - 1]; 
+                    snakeX[i] = snakeX[i - 1];
+                end
+                snakeY[0] = newHeadY;
+                snakeX[0] = newHeadX;
+                if (newHeadY == foodY && newHeadX == foodX) begin
+                    if (snakeTail != numSnakePieces - 1) begin
+                        snakeTail = snakeTail + 1'b1;
+                    end
+                    incrementScore();
+                    foodY = 0;
+                    foodX = 0;
+                    currentState = `STATE_FIND_FOOD;
+                end
+                // Food wasn't picked up, so zero out the tail
+                else begin
+                    // We don't want to zero out the tail if the snake is the maximum length possible
+                    if (snakeTail != numSnakePieces - 1) begin
+                        snakeY[snakeTail + 1] = 0;
+                        snakeX[snakeTail + 1] = 0;
+                    end
+                end
+
+                // End game conditions
+                if (newHeadY == 0 || newHeadY == (`GRID_HEIGHT - 1) ||
+                    newHeadX == 0 || newHeadX == (`GRID_WIDTH - 1)) begin
+                    currentState = `STATE_DEAD;
+                end
+                checkCollision = 1;
+            end
+            
+            if (currentState == `STATE_DEAD)
+                updateHighScore();
         end
-        
+    end
+    
+//    FoodRandomizer fr(
+//        .Blocks(packBlocks),
+//        .MasterClock(MasterClock),
+//        .ButtonLeft(ButtonLeft),
+//        .ButtonRight(ButtonRight),
+//        .ButtonUp(ButtonUp),
+//        .ButtonDown(ButtonDown),
+//        .ButtonCenter(ButtonCenter),
+//        .NextFoodV(pNextFoodV),
+//        .NextFoodH(pNextFoodH)
+//    );
+    
+//    SegController sc(
+//        .Clock(fastClock),
+//        .En(1),
+//        .FirstDigit(segFirstDigit),
+//        .SecondDigit(segSecondDigit),
+//        .ThirdDigit(segThirdDigit),
+//        .FourthDigit(segFourthDigit),
+//        .A(An),
+//        .C(Seg)
+//    );
+
+    task incrementScore; begin
+        fourthDigit = fourthDigit + 1'b1;
+        if (fourthDigit == 10) begin
+            fourthDigit = 0;
+            thirdDigit = thirdDigit + 1'b1;
+            if (thirdDigit == 10) begin
+                thirdDigit = 0;
+                secondDigit = secondDigit + 1'b1;
+                if (secondDigit == 10) begin
+                    secondDigit = 0;
+                    firstDigit = firstDigit + 1'b1;
+                end
+            end
+        end
+    end
+    endtask
+    
+    task updateHighScore; begin
         if (firstDigit > highFirstDigit) begin
             highFirstDigit = firstDigit;
             highSecondDigit = secondDigit;
@@ -316,211 +381,5 @@ module Snake(
         end
     end
     endtask
-
-    task reinitializeGame; begin
-        pauseEnable = 0;
-        gameOver = 0;
-        segEnable = 1;
-        firstDigit = 0;
-        secondDigit = 0;
-        thirdDigit = 0;
-        fourthDigit = 0;
-        
-        for (i = 1; i < `GRID_HEIGHT - 1; i = i + 1) begin
-            for (j = 1; j < `GRID_WIDTH - 1; j = j + 1) begin
-                blocks[i][j] = `BLOCK_EMPTY;
-            end
-        end
-
-        // initialize snake starting point
-        snakeHeadV = 1;
-        snakeHeadH = 1;
-        snakeTailV = 1;
-        snakeTailH = 1;
-        snakeDir[1][1] = `DIR_RIGHT;
-        blocks[1][1] = `BLOCK_SNAKE;
-
-        // initialize food
-        blocks[1][9] = `BLOCK_FOOD;
-    end
-    endtask
-
-//    // setup user control (set the pressed button to reg buttonPressed)
-//    always @ (*) begin
-//        if (leftPressed == 1) begin
-//            buttonPressed <= `BTN_LEFT;
-//        end
-//        else if (rightPressed == 1) begin
-//            buttonPressed <= `BTN_RIGHT;
-//        end
-//        else if (upPressed == 1) begin
-//            buttonPressed <= `BTN_UP;
-//        end 
-//        else if (downPressed == 1) begin
-//            buttonPressed <= `BTN_DOWN;
-//        end
-//    end
-//    
-//    always @ (*) begin
-//        if (centerPressed == 1) begin
-//            pauseEnable <= ~pauseEnable;
-//        end
-//    end
-//    
-//    // change snake moving direction based on button pressed
-//    /*
-//    always @ (posedge debouncerClock) begin
-//        case (buttonPressed)
-//            `BTN_LEFT: snakeDir[snakeHead_V][snakeHead_H] = `DIR_LEFT;
-//            `BTN_RIGHT: snakeDir[snakeHead_V][snakeHead_H] = `DIR_RIGHT;
-//            `BTN_UP: snakeDir[snakeHead_V][snakeHead_H] = `DIR_UP;
-//            `BTN_DOWN: snakeDir[snakeHead_V][snakeHead_H] = `DIR_DOWN;
-//            `BTN_CENTER: pauseEnable = ~pauseEnable;
-//            default: $display ("OOPS");
-//        endcase
-//    end
-//    */
-//    
-//    // main game playing mechanism
-//    //8 snake moving mechanism
-//    always @ (posedge gameClock) begin
-//        /*
-//        if (leftPressed) begin
-//            snakeDir[snakeHead_V][snakeHead_H] = `DIR_LEFT;
-//        end
-//        else if (rightPressed) begin
-//            snakeDir[snakeHead_V][snakeHead_H] = `DIR_RIGHT;
-//        end
-//        else if (upPressed) begin
-//            snakeDir[snakeHead_V][snakeHead_H] = `DIR_UP;
-//        end 
-//        else if (downPressed) begin
-//            snakeDir[snakeHead_V][snakeHead_H] = `DIR_DOWN;
-//        end
-//        else if (centerPressed) begin
-//            pauseEnable = ~pauseEnable;
-//        end
-//        */
-//        //if (gameClock == 1) begin
-//        snakeHeadDir = snakeDir[snakeHead_V][snakeHead_H];
-//        case (buttonPressed)
-//            `BTN_LEFT: begin
-//                if (snakeHeadDir != `DIR_RIGHT) begin
-//                    snakeDir[snakeHead_V][snakeHead_H] = `DIR_LEFT;
-//                end
-//                firstDigit = 1;
-//            end
-//            `BTN_RIGHT: begin
-//                if (snakeHeadDir != `DIR_LEFT) begin
-//                    snakeDir[snakeHead_V][snakeHead_H] = `DIR_RIGHT;
-//                end
-//                firstDigit = 2;
-//            end
-//            `BTN_UP: begin
-//                if (snakeHeadDir != `DIR_DOWN) begin
-//                    snakeDir[snakeHead_V][snakeHead_H] = `DIR_UP;
-//                end
-//                firstDigit = 3;
-//            end
-//            `BTN_DOWN: begin
-//                if (snakeHeadDir != `DIR_UP) begin
-//                    snakeDir[snakeHead_V][snakeHead_H] = `DIR_DOWN;
-//                end
-//                firstDigit = 4;
-//            end
-//            default: firstDigit = 5;
-//        endcase
-//
-//        if (!gameOver) begin
-//            if (!pauseEnable) begin
-//                // setup the position of snakeHead pointer
-//                snakeHeadDir = snakeDir[snakeHead_V][snakeHead_H];
-//                case (snakeHeadDir)
-//                    `DIR_UP: begin
-//                                snakeDir[snakeHead_V + 1][snakeHead_H] = snakeHeadDir;
-//                                snakeHead_V = snakeHead_V + 1'b1;
-//                            end
-//                    `DIR_DOWN: begin
-//                                snakeDir[snakeHead_V - 1][snakeHead_H] = snakeHeadDir;
-//                                snakeHead_V = snakeHead_V - 1'b1;
-//                            end
-//                    `DIR_LEFT: begin
-//                                snakeDir[snakeHead_V][snakeHead_H - 1] = snakeHeadDir;
-//                                snakeHead_H = snakeHead_H - 1'b1;
-//                            end
-//                    `DIR_RIGHT: begin
-//                                snakeDir[snakeHead_V][snakeHead_H + 1] = snakeHeadDir;
-//                                snakeHead_H = snakeHead_H + 1'b1;
-//                            end
-//                    default: $display ("OOPS");
-//                endcase
-//            
-//                // check if the will be head coordinate is the same as food coordinate
-//                if (blocks[snakeHead_V][snakeHead_H] == `BLOCK_FOOD) begin
-//                    // food is eaten
-//                    blocks[snakeHead_V][snakeHead_H] = `BLOCK_SNAKE;
-//                    
-//                    //blocks[nextFoodV][nextFoodH] <= `BLOCK_FOOD;
-//                    //nextFoodV <= pNextFoodV;
-//                    //nextFoodH <= pNextFoodH;
-//                    score = score + 1'b1;
-//                    /*fourthDigit = fourthDigit + 1'b1;
-//                    if (fourthDigit == 10) begin
-//                        fourthDigit = 0;
-//                        thirdDigit = thirdDigit + 1'b1;
-//                        if (thirdDigit == 10) begin
-//                            thirdDigit = 0;
-//                            secondDigit = secondDigit + 1'b1;
-//                            if (secondDigit == 10) begin
-//                                secondDigit = 0;
-//                                firstDigit = firstDigit + 1'b1;
-//                            end
-//                        end
-//                    end*/
-//                    
-//                    
-//                end else begin
-//                    // food is not eaten
-//                    // setup the position of snakeTail pointer
-//                    // first empty out the tail's block
-//                    blocks[snakeTail_V][snakeTail_H] = `BLOCK_EMPTY;
-//                    case (snakeDir[snakeTail_V][snakeTail_H])
-//                        `DIR_UP: begin
-//                                    snakeTail_V = snakeTail_V + 1'b1;
-//                                end
-//                        `DIR_DOWN: begin
-//                                    snakeTail_V = snakeTail_V - 1'b1;
-//                                end
-//                        `DIR_LEFT: begin
-//                                    snakeTail_H = snakeTail_H - 1'b1;
-//                                end
-//                        `DIR_RIGHT: begin
-//                                    snakeTail_H = snakeTail_H + 1'b1;
-//                                end
-//                        default: $display ("OOPS");
-//                    endcase
-//            
-//                    // check and kill snake
-//                    if (blocks[snakeHead_V][snakeHead_H] != `BLOCK_EMPTY) begin
-//                        // because we already checked food, if it's not empty, it's either SNAKE or WALL
-//                        gameOver = 1;
-//                    end else begin
-//                        blocks[snakeHead_V][snakeHead_H] = `BLOCK_SNAKE;
-//                        //snakeDir[snakeHead_V][snakeHead_H] = snakeHeadDir;  // set the new head's dir to the previous head dir
-//                
-//                        // because snake moves, we need to make sure next food coordinate is still valid
-//                        if (blocks[nextFoodV][nextFoodH] == `BLOCK_SNAKE) begin
-//                            nextFoodV = pNextFoodV;
-//                            nextFoodH = pNextFoodH;
-//                        end
-//                    end
-//                end // end food checking if statement
-//            end // end pauseEnable if statement
-//        end else begin
-//            // game over bruh!
-//            
-//        end
-//    end
-    
 
 endmodule

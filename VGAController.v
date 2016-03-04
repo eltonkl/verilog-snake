@@ -1,12 +1,44 @@
 `include "Constants.v"
 
 module VGAController(
-    input wire [0:(`BITS_PER_BLOCK * `GRID_HEIGHT * `GRID_WIDTH)-1] Blocks,
+    input wire [0:(yCoordBits * `NUM_SNAKE_PIECES)-1] packSnakeY,
+    input wire [0:(xCoordBits * `NUM_SNAKE_PIECES)-1] packSnakeX,
+    input wire [yCoordBits-1:0] foodY,
+    input wire [xCoordBits-1:0] foodX,
     input wire                          Clock,
     output reg [0:7]                    RGB,
     output wire                         HSync,
     output wire                         VSync
     );
+
+    parameter yCoordBits = $clog2(`GRID_HEIGHT);
+    parameter xCoordBits = $clog2(`GRID_WIDTH);
+    parameter numSnakePieces = `NUM_SNAKE_PIECES;
+    parameter numPiecesBits = $clog2(numSnakePieces);
+
+    wire [yCoordBits-1:0] snakeY [0:numSnakePieces-1]; // y-coordinate
+    wire [xCoordBits-1:0] snakeX [0:numSnakePieces-1];  // x-coordinate
+    reg [numPiecesBits:0] i;
+    
+    // unpack into snakeY
+    genvar h, k;
+    generate
+        for (h = 0; h < (`NUM_SNAKE_PIECES); h = h + 1) begin : for_outer
+            for (k = 0; k < yCoordBits; k = k + 1) begin : for_inner
+                assign snakeY[h][k] = packSnakeY[(h * yCoordBits) + k];
+            end
+        end
+    endgenerate
+    
+    // unpack into snakeX
+    genvar w, l;
+    generate
+        for (w = 0; w < (`NUM_SNAKE_PIECES); w = w + 1) begin : for_outer2
+            for (l = 0; l < xCoordBits; l = l + 1) begin : for_inner2
+                assign snakeX[w][l] = packSnakeX[(w * xCoordBits) + l];
+            end
+        end
+    endgenerate
 
     parameter hPixels = 800;    // Pixels per horizontal line
     parameter vLines = 521;     // Vertical lines per frame
@@ -27,11 +59,11 @@ module VGAController(
     
     always @ (posedge Clock) begin
         if (hCounter < hPixels - 1)
-            hCounter <= hCounter + 1;
+            hCounter <= hCounter + 1'b1;
         else begin
             hCounter <= 0;
             if (vCounter < vLines - 1)
-                vCounter <= vCounter + 1;
+                vCounter <= vCounter + 1'b1;
             else
                 vCounter <= 0;
         end
@@ -40,29 +72,24 @@ module VGAController(
     assign HSync = (hCounter < hPulse) ? hPolarity : ~hPolarity;
     assign VSync = (vCounter < vPulse) ? vPolarity : ~vPolarity;
     
-    wire [3:0] xBlockIndex = (hCounter - hBP)/`BLOCK_WIDTH;
-    wire [3:0] yBlockIndex = (vCounter - vBP)/`BLOCK_HEIGHT;
-
-    wire [(`BITS_PER_BLOCK)-1:0] blocks [0:`GRID_HEIGHT-1] [0:`GRID_WIDTH-1];
-    
-    genvar unpackHeight, unpackWidth;
-    generate
-        for (unpackHeight = 0; unpackHeight < (`GRID_HEIGHT); unpackHeight = unpackHeight + 1) begin : for_outer
-            for (unpackWidth = 0; unpackWidth < (`GRID_WIDTH); unpackWidth = unpackWidth + 1) begin : for_inner
-                assign blocks[unpackHeight][unpackWidth] = { Blocks[(`BITS_PER_BLOCK * ((unpackHeight * `GRID_WIDTH) + unpackWidth)) + 1], Blocks[(`BITS_PER_BLOCK * ((unpackHeight * `GRID_WIDTH) + unpackWidth))] };
-            end
-        end
-    endgenerate
+    wire [$clog2(`GRID_WIDTH)-1:0] xBlockIndex = (hCounter - hBP)/`BLOCK_WIDTH;
+    wire [$clog2(`GRID_HEIGHT)-1:0] yBlockIndex = (vCounter - vBP)/`BLOCK_HEIGHT;
  
     always @ (*) begin
         if (vCounter >= vBP && vCounter < vFP) begin
             if (hCounter > hBP && hCounter < (hBP + 640)) begin
-                case (blocks[yBlockIndex][xBlockIndex])
-                    `BLOCK_EMPTY:   RGB = `COLOR_EMPTY;
-                    `BLOCK_SNAKE:   RGB = `COLOR_SNAKE;
-                    `BLOCK_FOOD:    RGB = `COLOR_FOOD;
-                    `BLOCK_WALL:    RGB = `COLOR_WALL;
-                endcase
+                // initialize to empty
+                RGB = `COLOR_EMPTY;
+                if (yBlockIndex == 0 || yBlockIndex == (`GRID_HEIGHT - 1) || xBlockIndex == 0 || xBlockIndex == (`GRID_WIDTH - 1))
+                    RGB = `COLOR_WALL;
+                else if (yBlockIndex == foodY && xBlockIndex == foodX)
+                    RGB = `COLOR_FOOD;
+                else begin
+                    for (i = 0; i < numSnakePieces; i = i + 1) begin
+                        if (yBlockIndex == snakeY[i] && xBlockIndex == snakeX[i])
+                            RGB = `COLOR_SNAKE;
+                    end
+                end
             end
             // Not in the active video region
             else

@@ -5,8 +5,7 @@ module ClockDivider(
 	output  reg fastClock  // for seg display
 	);
 	
-	parameter GameClockBreakPoint = 50000000;   // 2Hz
-    //parameter GameClockBreakPoint = 200000000;
+	parameter GameClockBreakPoint = 15000000;
 	parameter FastClockBreakPoint = 160000;
 	
 	reg clockCounter;
@@ -25,7 +24,6 @@ module ClockDivider(
 
 	always @ (posedge MasterClock) begin
 		clockCounter <= ~clockCounter;
-		//Clock <= ~Clock && clockCounter;
 		if (clockCounter) begin
 		    Clock <= ~Clock;
 		end
@@ -47,5 +45,4 @@ module ClockDivider(
 		end
 		
 	end
-
 endmodule
