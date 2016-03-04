@@ -24,7 +24,7 @@
 `define COLOR_SNAKE         8'b00011100
 `define COLOR_EMPTY         8'b00000000
 
-`define NUM_SNAKE_PIECES    8
+`define NUM_SNAKE_PIECES    6
 
 `define BITS_PER_STATE      2
 `define STATE_PAUSE         2'b00

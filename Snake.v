@@ -299,10 +299,10 @@ module Snake(
                     newHeadX == 0 || newHeadX == (`GRID_WIDTH - 1)) begin
                     currentState = `STATE_DEAD;
                 end
-                /*for (j = 1; j < numSnakePieces; j = j + 1) begin
+                for (j = 1; j < numSnakePieces; j = j + 1) begin
                     if (snakeY[j] == newHeadY && snakeX[j] == newHeadX)
                         currentState = `STATE_DEAD;
-                end*/
+                end
                 if (currentState == `STATE_DEAD)
                     updateHighScore();
             end
