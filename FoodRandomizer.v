@@ -12,6 +12,12 @@ module FoodRandomizer(
         output reg [$clog2(`GRID_WIDTH)-1:0] NextFoodH
     );
     
+    initial begin
+        NextFoodV = 8;
+        NextFoodH = 8;
+    end
+    
+    /*
     reg [6:0] LFSRC;
     reg [6:0] LFSRL;
     reg [6:0] LFSRR;
@@ -53,16 +59,16 @@ module FoodRandomizer(
     end
     
     always @ (posedge MasterClock) begin
-        NextFoodV <= LFSRC ^ LFSRL & ('b1 > $clog2(`GRID_HEIGHT));
-        NextFoodH <= LFSRC ^ LFSRR & ('b1 > $clog2(`GRID_WIDTH));
+        //NextFoodV <= LFSRC ^ LFSRL & ('b1 > $clog2(`GRID_HEIGHT));
+        //NextFoodH <= LFSRC ^ LFSRR & ('b1 > $clog2(`GRID_WIDTH));
         
         // check the indices are not out of bounds
         // make sure that this block is not WALL or SNAKE
         
-        while (NextFoodV >= `GRID_HEIGHT-1 || NextFoodV <= 0 || NextFoodH >= `GRID_WIDTH-1 || NextFoodH <= 0 || blocks[NextFoodV][NextFoodH] != `BLOCK_EMPTY) begin
-            NextFoodV <= LFSRC ^ LFSRL & ('b1 > $clog2(`GRID_HEIGHT));
-            NextFoodH <= LFSRC ^ LFSRR & ('b1 > $clog2(`GRID_WIDTH));
-        end
+        //while (NextFoodV >= `GRID_HEIGHT-1 || NextFoodV <= 0 || NextFoodH >= `GRID_WIDTH-1 || NextFoodH <= 0 || blocks[NextFoodV][NextFoodH] != `BLOCK_EMPTY) begin
+        //    NextFoodV <= LFSRC ^ LFSRL & ('b1 > $clog2(`GRID_HEIGHT));
+        //    NextFoodH <= LFSRC ^ LFSRR & ('b1 > $clog2(`GRID_WIDTH));
+        //end
     end
-    
+    */
 endmodule

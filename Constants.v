@@ -29,6 +29,7 @@
 `define BTN_LEFT        3'b010
 `define BTN_RIGHT       3'b011
 `define BTN_CENTER      3'b100
+`define BTN_NONE        3'b111
 
 `define LETTER_H        10
 `define LETTER_I        11

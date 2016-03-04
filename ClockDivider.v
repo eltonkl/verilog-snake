@@ -5,12 +5,13 @@ module ClockDivider(
 	output  reg fastClock  // for seg display
 	);
 	
-	parameter GameClockBreakPoint = 50000000;   // 2Hz
+	//parameter GameClockBreakPoint = 50000000;   // 2Hz
+    parameter GameClockBreakPoint = 200000000;
 	parameter FastClockBreakPoint = 160000;
 	
 	reg clockCounter;
-	reg gameClockCounter;
-	reg fastClockCounter;
+	reg [$clog2(GameClockBreakPoint)-1:0] gameClockCounter;
+	reg [$clog2(FastClockBreakPoint)-1:0] fastClockCounter;
 	
 	initial begin
 		Clock = 0;
@@ -29,20 +30,20 @@ module ClockDivider(
 		    Clock <= ~Clock;
 		end
 		
-		if (gameClock == GameClockBreakPoint) begin
-		    gameClockCounter <= 0;
-		    gameClock <= 1;
+		if (gameClockCounter == GameClockBreakPoint) begin
+		    gameClockCounter <= 1'b0;
+		    gameClock <= 1'b1;
 		end else begin
-		    gameClockCounter <= gameClockCounter + 1;
-		    gameClock <= 0;
+		    gameClockCounter <= gameClockCounter + 1'b1;
+		    gameClock <= 1'b0;
 		end
 		
-		if (fastClock == FastClockBreakPoint) begin
-		    fastClockCounter <= 0;
-		    fastClock <= 1;
+		if (fastClockCounter == FastClockBreakPoint) begin
+		    fastClockCounter <= 1'b0;
+		    fastClock <= 1'b1;
 		end else begin
-		    fastClockCounter <= fastClockCounter + 1;
-		    fastClock <= 0;
+		    fastClockCounter <= fastClockCounter + 1'b1;
+		    fastClock <= 1'b0;
 		end
 		
 	end
