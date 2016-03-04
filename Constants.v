@@ -24,6 +24,11 @@
 `define COLOR_SNAKE     8'b00011100
 `define COLOR_EMPTY     8'b00000000
 
+`define BITS_PER_STATE  2
+`define STATE_PAUSE     2'b00
+`define STATE_DEAD      2'b01
+`define STATE_ACTIVE    2'b10
+
 `define BTN_UP          3'b000
 `define BTN_DOWN        3'b001
 `define BTN_LEFT        3'b010
