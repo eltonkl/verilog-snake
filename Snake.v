@@ -56,8 +56,8 @@ module Snake(
     reg [3:0] highFourthDigit;
     
     // other utilities
-    reg [4:0] i;
-    reg [4:0] j;
+    reg [numPiecesBits:0] i;
+    reg [numPiecesBits:0] j;
     
     wire leftPressed;
     wire rightPressed;
@@ -280,23 +280,31 @@ module Snake(
                     if (snakeTail != numSnakePieces - 1) begin
                         snakeTail = snakeTail + 1;
                     end
+                    incrementScore();
                     foodY = 0;
                     foodX = 0;
                     currentState = `STATE_FIND_FOOD;
                 end
-                else if (newHeadY == 0 || newHeadY == `GRID_HEIGHT - 1 ||
-                         newHeadX == 0 || newHeadX == `GRID_WIDTH - 1) begin
-                    // End game
-                    currentState = `STATE_DEAD;
-                end
+                // Food wasn't picked up, so zero out the tail
                 else begin
+                    // We don't want to zero out the tail if the snake is the maximum length possible
                     if (snakeTail != numSnakePieces - 1) begin
-                        // Food wasn't picked up, so zero out the tail
                         snakeY[snakeTail + 1] = 0;
                         snakeX[snakeTail + 1] = 0;
                     end
                 end
-                
+
+                // End game conditions
+                if (newHeadY == 0 || newHeadY == (`GRID_HEIGHT - 1) ||
+                    newHeadX == 0 || newHeadX == (`GRID_WIDTH - 1)) begin
+                    currentState = `STATE_DEAD;
+                end
+                /*for (j = 1; j < numSnakePieces; j = j + 1) begin
+                    if (snakeY[j] == newHeadY && snakeX[j] == newHeadX)
+                        currentState = `STATE_DEAD;
+                end*/
+                if (currentState == `STATE_DEAD)
+                    updateHighScore();
             end
         end
     end
@@ -323,5 +331,50 @@ module Snake(
 //        .A(An),
 //        .C(Seg)
 //    );
+
+    task incrementScore; begin
+        fourthDigit = fourthDigit + 1'b1;
+        if (fourthDigit == 10) begin
+            fourthDigit = 0;
+            thirdDigit = thirdDigit + 1'b1;
+            if (thirdDigit == 10) begin
+                thirdDigit = 0;
+                secondDigit = secondDigit + 1'b1;
+                if (secondDigit == 10) begin
+                    secondDigit = 0;
+                    firstDigit = firstDigit + 1'b1;
+                end
+            end
+        end
+    end
+    endtask
+    
+    task updateHighScore; begin
+        if (firstDigit > highFirstDigit) begin
+            highFirstDigit = firstDigit;
+            highSecondDigit = secondDigit;
+            highThirdDigit = thirdDigit;
+            highFourthDigit = fourthDigit;
+        end
+        else if (firstDigit == highFirstDigit) begin
+            if (secondDigit > highSecondDigit) begin
+                highSecondDigit = secondDigit;
+                highThirdDigit = thirdDigit;
+                highFourthDigit = fourthDigit;
+            end
+            else if (secondDigit == highSecondDigit) begin
+                if (thirdDigit > highThirdDigit) begin
+                    highThirdDigit = thirdDigit;
+                    highFourthDigit = fourthDigit;
+                end
+                else if (thirdDigit == highThirdDigit) begin
+                    if (fourthDigit > highFourthDigit) begin
+                        highFourthDigit = fourthDigit;
+                    end
+                end
+            end
+        end
+    end
+    endtask
 
 endmodule

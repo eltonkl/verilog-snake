@@ -85,7 +85,7 @@ module VGAController(
                 else if (yBlockIndex == foodY && xBlockIndex == foodX)
                     RGB = `COLOR_FOOD;
                 else begin
-                    for (i = 0; i < `NUM_SNAKE_PIECES; i = i + 1) begin
+                    for (i = 0; i < numSnakePieces; i = i + 1) begin
                         if (yBlockIndex == snakeY[i] && xBlockIndex == snakeX[i])
                             RGB = `COLOR_SNAKE;
                     end

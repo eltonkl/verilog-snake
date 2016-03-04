@@ -17,7 +17,7 @@ module Debouncer(
     end
 
     always @ (posedge Clock) begin
-        if (counter == 20000) begin
+        if (counter == 12500) begin
             counter <= 0;
             step <= Signal;
         end else begin
