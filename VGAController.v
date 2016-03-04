@@ -4,8 +4,10 @@ module VGAController(
     // TODO: need to pack/unpack array
     // input wire [yCoordBits-1:0] snakeY [0:numSnakePieces-1], // y-coordinate
     // input wire [xCoordBits-1:0] snakeX [0:numSnakePieces-1],  // x-coordinate
-    // input wire [yCoordBits-1:0] foodY,
-    // input wire [xCoordBits-1:0] foodX,
+    input wire [0:(yCoordBits * `NUM_SNAKE_PIECES)-1] packSnakeY;
+    input wire [0:(xCoordBits * `NUM_SNAKE_PIECES)-1] packSnakeX;
+    input wire [yCoordBits-1:0] foodY,
+    input wire [xCoordBits-1:0] foodX,
     input wire                          Clock,
     output reg [0:7]                    RGB,
     output wire                         HSync,
@@ -17,11 +19,31 @@ module VGAController(
     parameter numSnakePieces = `NUM_SNAKE_PIECES;
     parameter numPiecesBits = $clog2(numSnakePieces);
 
-    reg [yCoordBits-1:0] snakeY [0:numSnakePieces-1]; // y-coordinate
-    reg [xCoordBits-1:0] snakeX [0:numSnakePieces-1];  // x-coordinate
-    reg [yCoordBits-1:0] foodY;
-    reg [xCoordBits-1:0] foodX;
+    wire [yCoordBits-1:0] snakeY [0:numSnakePieces-1]; // y-coordinate
+    wire [xCoordBits-1:0] snakeX [0:numSnakePieces-1];  // x-coordinate
+    //reg [yCoordBits-1:0] foodY;
+    //reg [xCoordBits-1:0] foodX;
     reg [numPiecesBits-1:0] i;
+    
+    // unpack into snakeY
+    genvar h, k;
+    generate
+        for (h = 0; h < (`NUM_SNAKE_PIECES); h = h + 1) begin : for_outer
+            for (k = 0; k < yCoordBits; k = k + 1) begin : for_inner
+                assign snakeY[h][k] = packSnakeY[(h * yCoordBits) + k];
+            end
+        end
+    endgenerate
+    
+    // unpack into snakeX
+    genvar w, l;
+    generate
+        for (w = 0; w < (`NUM_SNAKE_PIECES); w = w + 1) begin : for_outer
+            for (l = 0; l < xCoordBits; l = l + 1) begin : for_inner
+                assign snakeX[w][l] = packSnakeX[(w * xCoordBits) + l];
+            end
+        end
+    endgenerate
     
     initial begin
         for (i = 1; i < numSnakePieces; i = i + 1) begin
