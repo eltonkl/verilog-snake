@@ -2,15 +2,37 @@
 
 module VGAController(
     // TODO: need to pack/unpack array
-    input wire [yCoordBits-1:0] snakeY [0:numSnakePieces-1], // y-coordinate
-    input wire [xCoordBits-1:0] snakeX [0:numSnakePieces-1],  // x-coordinate
-    input wire [yCoordBits-1:0] foodY,
-    input wire [xCoordBits-1:0] foodX,
+    // input wire [yCoordBits-1:0] snakeY [0:numSnakePieces-1], // y-coordinate
+    // input wire [xCoordBits-1:0] snakeX [0:numSnakePieces-1],  // x-coordinate
+    // input wire [yCoordBits-1:0] foodY,
+    // input wire [xCoordBits-1:0] foodX,
     input wire                          Clock,
     output reg [0:7]                    RGB,
     output wire                         HSync,
     output wire                         VSync
     );
+
+    parameter yCoordBits = $clog2(`GRID_HEIGHT);
+    parameter xCoordBits = $clog2(`GRID_WIDTH);
+    parameter numSnakePieces = `NUM_SNAKE_PIECES;
+    parameter numPiecesBits = $clog2(numSnakePieces);
+
+    reg [yCoordBits-1:0] snakeY [0:numSnakePieces-1]; // y-coordinate
+    reg [xCoordBits-1:0] snakeX [0:numSnakePieces-1];  // x-coordinate
+    reg [yCoordBits-1:0] foodY;
+    reg [xCoordBits-1:0] foodX;
+    reg [numPiecesBits-1:0] i;
+    
+    initial begin
+        for (i = 1; i < numSnakePieces; i = i + 1) begin
+            snakeY[i] = 0;
+            snakeX[i] = 0;
+        end
+        snakeY[0] = 1;
+        snakeX[0] = 1;
+        foodY = 1;
+        foodX = 8;
+    end
 
     parameter hPixels = 800;    // Pixels per horizontal line
     parameter vLines = 521;     // Vertical lines per frame
@@ -28,7 +50,6 @@ module VGAController(
     
     reg [9:0] hCounter = 0;
     reg [9:0] vCounter = 0;
-    reg [$clog2(`NUM_SNAKE_PIECES)-1:0] i;
     
     always @ (posedge Clock) begin
         if (hCounter < hPixels - 1)
@@ -47,29 +68,18 @@ module VGAController(
     
     wire [3:0] xBlockIndex = (hCounter - hBP)/`BLOCK_WIDTH;
     wire [3:0] yBlockIndex = (vCounter - vBP)/`BLOCK_HEIGHT;
-
-    wire [(`BITS_PER_BLOCK)-1:0] blocks [0:`GRID_HEIGHT-1] [0:`GRID_WIDTH-1];
-    
-    genvar unpackHeight, unpackWidth;
-    generate
-        for (unpackHeight = 0; unpackHeight < (`GRID_HEIGHT); unpackHeight = unpackHeight + 1) begin : for_outer
-            for (unpackWidth = 0; unpackWidth < (`GRID_WIDTH); unpackWidth = unpackWidth + 1) begin : for_inner
-                assign blocks[unpackHeight][unpackWidth] = { Blocks[(`BITS_PER_BLOCK * ((unpackHeight * `GRID_WIDTH) + unpackWidth)) + 1], Blocks[(`BITS_PER_BLOCK * ((unpackHeight * `GRID_WIDTH) + unpackWidth))] };
-            end
-        end
-    endgenerate
  
     always @ (*) begin
         if (vCounter >= vBP && vCounter < vFP) begin
             if (hCounter > hBP && hCounter < (hBP + 640)) begin
                 // initialize to empty
                 RGB = `COLOR_EMPTY;
-                if (yBlockIndex == 0 or yBlockIndex == (`GRID_HEIGHT - 1) or xBlockIndex == 0 or xBlockIndex == (`GRID_WIDTH - 1))
+                if (yBlockIndex == 0 || yBlockIndex == (`GRID_HEIGHT - 1) || xBlockIndex == 0 || xBlockIndex == (`GRID_WIDTH - 1))
                     RGB = `COLOR_WALL;
                 else if (yBlockIndex == foodY && xBlockIndex == foodX)
                     RGB = `COLOR_FOOD;
                 else begin
-                    for (i = 0; i < NUM_SNAKE_PIECES; i = i + 1) begin
+                    for (i = 0; i < `NUM_SNAKE_PIECES; i = i + 1) begin
                         if (yBlockIndex == snakeY[i] && xBlockIndex == snakeX[i])
                             RGB = `COLOR_SNAKE;
                     end
