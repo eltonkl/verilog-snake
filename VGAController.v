@@ -1,7 +1,11 @@
 `include "Constants.v"
 
 module VGAController(
-    input wire [0:(`BITS_PER_BLOCK * `GRID_HEIGHT * `GRID_WIDTH)-1] Blocks,
+    // TODO: need to pack/unpack array
+    input wire [yCoordBits-1:0] snakeY [0:numSnakePieces-1], // y-coordinate
+    input wire [xCoordBits-1:0] snakeX [0:numSnakePieces-1],  // x-coordinate
+    input wire [yCoordBits-1:0] foodY,
+    input wire [xCoordBits-1:0] foodX,
     input wire                          Clock,
     output reg [0:7]                    RGB,
     output wire                         HSync,
@@ -24,6 +28,7 @@ module VGAController(
     
     reg [9:0] hCounter = 0;
     reg [9:0] vCounter = 0;
+    reg [$clog2(`NUM_SNAKE_PIECES)-1:0] i;
     
     always @ (posedge Clock) begin
         if (hCounter < hPixels - 1)
@@ -57,12 +62,18 @@ module VGAController(
     always @ (*) begin
         if (vCounter >= vBP && vCounter < vFP) begin
             if (hCounter > hBP && hCounter < (hBP + 640)) begin
-                case (blocks[yBlockIndex][xBlockIndex])
-                    `BLOCK_EMPTY:   RGB = `COLOR_EMPTY;
-                    `BLOCK_SNAKE:   RGB = `COLOR_SNAKE;
-                    `BLOCK_FOOD:    RGB = `COLOR_FOOD;
-                    `BLOCK_WALL:    RGB = `COLOR_WALL;
-                endcase
+                // initialize to empty
+                RGB = `COLOR_EMPTY;
+                if (yBlockIndex == 0 or yBlockIndex == (`GRID_HEIGHT - 1) or xBlockIndex == 0 or xBlockIndex == (`GRID_WIDTH - 1))
+                    RGB = `COLOR_WALL;
+                else if (yBlockIndex == foodY && xBlockIndex == foodX)
+                    RGB = `COLOR_FOOD;
+                else begin
+                    for (i = 0; i < NUM_SNAKE_PIECES; i = i + 1) begin
+                        if (yBlockIndex == snakeY[i] && xBlockIndex == snakeX[i])
+                            RGB = `COLOR_SNAKE;
+                    end
+                end
             end
             // Not in the active video region
             else
