@@ -19,7 +19,7 @@
 `define GRID_WIDTH      ( `H_PIXELS / `BLOCK_WIDTH )
 
 // R (3 bits) G (3 bits) B (2 bits)
-`define COLOR_FOOD      8'b11100000
+`define COLOR_FOOD      8'b11110100
 `define COLOR_WALL      8'b11111111
 `define COLOR_SNAKE     8'b00011100
 `define COLOR_EMPTY     8'b00000000
