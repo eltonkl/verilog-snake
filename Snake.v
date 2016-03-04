@@ -164,7 +164,7 @@ module Snake(
         foodX = 10;
         
         currentDir = `DIR_RIGHT;
-        currentState = `STATE_ALIVE;
+        currentState = `STATE_DEAD;
         collidesWithFood = 0;
         segType = segCurrentScore;
     end
@@ -186,7 +186,7 @@ module Snake(
 
     always @ (posedge clock) begin
         if (currentState == `STATE_DEAD) begin
-            if (centerPressed) begin
+            if (centerPressed == 1) begin
                 currentState = `STATE_ALIVE;
 
                 firstDigit = 0;
@@ -206,7 +206,6 @@ module Snake(
                 foodX = 10;
                 
                 currentDir = `DIR_RIGHT;
-                currentState = `STATE_DEAD;
                 collidesWithFood = 0;
                 segType = segCurrentScore;
             end
@@ -221,13 +220,13 @@ module Snake(
             end
         end
         else if (currentState == `STATE_PAUSE) begin
-            if (centerPressed) begin
+            if (centerPressed == 1) begin
                 currentState = `STATE_ALIVE;
             end
         end
         else if (currentState == `STATE_FIND_FOOD) begin
             foodX = 3;
-            foodY = 11;
+            foodY = 9;
             currentState = `STATE_ALIVE;
         end
         else begin
@@ -271,14 +270,18 @@ module Snake(
                     end
                 endcase
                 
-                for (i = numSnakePieces - 1; i > 1; i = i - 1) begin
+                for (i = numSnakePieces - 1; i > 0; i = i - 1) begin
                     snakeY[i] = snakeY[i - 1]; 
                     snakeX[i] = snakeX[i - 1];
                 end
+                snakeY[0] = newHeadY;
+                snakeX[0] = newHeadX;
                 if (newHeadY == foodY && newHeadX == foodX) begin
-                    if (snakeTail == numSnakePieces - 1) begin
+                    if (snakeTail != numSnakePieces - 1) begin
                         snakeTail = snakeTail + 1;
                     end
+                    foodY = 0;
+                    foodX = 0;
                     currentState = `STATE_FIND_FOOD;
                 end
                 else if (newHeadY == 0 || newHeadY == `GRID_HEIGHT - 1 ||
@@ -287,12 +290,13 @@ module Snake(
                     currentState = `STATE_DEAD;
                 end
                 else begin
-                    // Food wasn't picked up, so zero out the tail
-                    snakeY[snakeTail] = 0;
-                    snakeX[snakeTail] = 0;
+                    if (snakeTail != numSnakePieces - 1) begin
+                        // Food wasn't picked up, so zero out the tail
+                        snakeY[snakeTail + 1] = 0;
+                        snakeX[snakeTail + 1] = 0;
+                    end
                 end
-                snakeY[0] = newHeadY;
-                snakeX[0] = newHeadX;
+                
             end
         end
     end
