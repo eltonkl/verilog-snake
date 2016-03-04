@@ -72,8 +72,8 @@ module VGAController(
     assign HSync = (hCounter < hPulse) ? hPolarity : ~hPolarity;
     assign VSync = (vCounter < vPulse) ? vPolarity : ~vPolarity;
     
-    wire [3:0] xBlockIndex = (hCounter - hBP)/`BLOCK_WIDTH;
-    wire [3:0] yBlockIndex = (vCounter - vBP)/`BLOCK_HEIGHT;
+    wire [$clog2(`GRID_WIDTH)-1:0] xBlockIndex = (hCounter - hBP)/`BLOCK_WIDTH;
+    wire [$clog2(`GRID_HEIGHT)-1:0] yBlockIndex = (vCounter - vBP)/`BLOCK_HEIGHT;
  
     always @ (*) begin
         if (vCounter >= vBP && vCounter < vFP) begin
