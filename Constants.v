@@ -7,8 +7,8 @@
 `define DIR_LEFT            2'b10
 `define DIR_RIGHT           2'b11
 
-`define BLOCK_HEIGHT        20
-`define BLOCK_WIDTH         20
+`define BLOCK_HEIGHT        32
+`define BLOCK_WIDTH         32
 `define GRID_HEIGHT         ( `V_PIXELS / `BLOCK_HEIGHT )
 `define GRID_WIDTH          ( `H_PIXELS / `BLOCK_WIDTH )
 
