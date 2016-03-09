@@ -6,7 +6,7 @@ module ClockDivider(
 	);
 	
 	parameter GameClockBreakPoint = 15000000;
-	parameter FastClockBreakPoint = 160000;
+	parameter FastClockBreakPoint = 200000;
 	
 	reg clockCounter;
 	reg [$clog2(GameClockBreakPoint)-1:0] gameClockCounter;

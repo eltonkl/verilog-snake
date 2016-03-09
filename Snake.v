@@ -11,7 +11,7 @@ module Snake(
     output wire         VGAHSync,
     output wire         VGAVSync,
     output wire [6:0]   Seg,
-    output wire [3:0]   An
+    output wire [2:0]   An
     );
     
     parameter yCoordBits = $clog2(`GRID_HEIGHT);
@@ -28,27 +28,26 @@ module Snake(
     reg [`BITS_PER_DIR-1:0] currentDir;
     reg checkCollision;
 
-    parameter deadTicks = 12500000;
+    parameter deadTicks = 25000000;
     parameter segCurrentScore = 1'b0;
     parameter segHighScore = 1'b1;
-    reg [23:0] deadCounter;
-    reg segType;
+    reg [$clog2(deadTicks)-1:0] deadCounter;
 
     reg [yCoordBits-1:0] foodY;
     reg [xCoordBits-1:0] foodX;
 
     // seg control
-    reg [3:0] segFirstDigit;
+    //reg [3:0] segFirstDigit;
     reg [3:0] segSecondDigit;
     reg [3:0] segThirdDigit;
     reg [3:0] segFourthDigit;
     
-    reg [3:0] firstDigit;
+    //reg [3:0] firstDigit;
     reg [3:0] secondDigit;
     reg [3:0] thirdDigit;
     reg [3:0] fourthDigit;
     
-    reg [3:0] highFirstDigit;
+    //reg [3:0] highFirstDigit;
     reg [3:0] highSecondDigit;
     reg [3:0] highThirdDigit;
     reg [3:0] highFourthDigit;
@@ -138,15 +137,15 @@ module Snake(
     );
 
     initial begin
-        firstDigit = 0;
+        //firstDigit = 0;
         secondDigit = 0;
         thirdDigit = 0;
-        fourthDigit = 0;
+        fourthDigit = 1;
         
-        highFirstDigit = 0;
+        //highFirstDigit = 0;
         highSecondDigit = 0;
         highThirdDigit = 0;
-        highFourthDigit = 0;
+        highFourthDigit = 1;
         
         deadCounter = 0;
         
@@ -164,22 +163,6 @@ module Snake(
         currentDir = `DIR_RIGHT;
         currentState = `STATE_DEAD;
         checkCollision = 0;
-        segType = segCurrentScore;
-    end
-
-    always @ (*) begin
-        if (segType == segHighScore) begin
-            segFirstDigit <= highFirstDigit;
-            segSecondDigit <= highSecondDigit;
-            segThirdDigit <= highThirdDigit;
-            segFourthDigit <= highFourthDigit;
-        end
-        else begin
-            segFirstDigit <= firstDigit;
-            segSecondDigit <= secondDigit;
-            segThirdDigit <= thirdDigit;
-            segFourthDigit <= fourthDigit;
-        end
     end
 
     always @ (posedge clock) begin
@@ -187,10 +170,10 @@ module Snake(
             if (centerPressed == 1) begin
                 currentState = `STATE_ALIVE;
 
-                firstDigit = 0;
+                //firstDigit = 0;
                 secondDigit = 0;
                 thirdDigit = 0;
-                fourthDigit = 0;
+                fourthDigit = 1;
 
                 for (i = 1; i < numSnakePieces; i = i + 1) begin
                     snakeY[i] = 0;
@@ -205,12 +188,14 @@ module Snake(
                 
                 currentDir = `DIR_RIGHT;
                 checkCollision = 0;
-                segType = segCurrentScore;
             end
             else begin
                 if (deadCounter + 1 == deadTicks) begin
                     deadCounter = 0;
-                    segType = ~segType;
+                    updateHighScore();
+                    segSecondDigit = highSecondDigit;
+                    segThirdDigit = highThirdDigit;
+                    segFourthDigit = highFourthDigit;
                 end
                 else begin
                     deadCounter = deadCounter + 1'b1;
@@ -286,6 +271,9 @@ module Snake(
                         snakeTail = snakeTail + 1'b1;
                     end
                     incrementScore();
+                    segSecondDigit = secondDigit;
+                    segThirdDigit = thirdDigit;
+                    segFourthDigit = fourthDigit;
                     foodY = 0;
                     foodX = 0;
                     currentState = `STATE_FIND_FOOD;
@@ -306,9 +294,6 @@ module Snake(
                 end
                 checkCollision = 1;
             end
-            
-            if (currentState == `STATE_DEAD)
-                updateHighScore();
         end
     end
     
@@ -324,42 +309,43 @@ module Snake(
 //        .NextFoodH(pNextFoodH)
 //    );
     
-//    SegController sc(
-//        .Clock(fastClock),
-//        .En(1),
-//        .FirstDigit(segFirstDigit),
-//        .SecondDigit(segSecondDigit),
-//        .ThirdDigit(segThirdDigit),
-//        .FourthDigit(segFourthDigit),
-//        .A(An),
-//        .C(Seg)
-//    );
+    SegController sc(
+        .Clock(fastClock),
+        //.FirstDigit(segFirstDigit),
+        .SecondDigit(segSecondDigit),
+        .ThirdDigit(segThirdDigit),
+        .FourthDigit(segFourthDigit),
+        .A(An),
+        .C(Seg)
+    );
 
     task incrementScore; begin
-        fourthDigit = fourthDigit + 1'b1;
-        if (fourthDigit == 10) begin
+        if (fourthDigit == 9) begin
             fourthDigit = 0;
-            thirdDigit = thirdDigit + 1'b1;
-            if (thirdDigit == 10) begin
+            if (thirdDigit == 9) begin
                 thirdDigit = 0;
-                secondDigit = secondDigit + 1'b1;
-                if (secondDigit == 10) begin
-                    secondDigit = 0;
-                    firstDigit = firstDigit + 1'b1;
+                if (secondDigit != 9) begin
+                    secondDigit = secondDigit + 1'b1;
                 end
             end
+            else begin
+                thirdDigit = thirdDigit + 1'b1;
+            end
+        end
+        else begin
+            fourthDigit = fourthDigit + 1'b1;
         end
     end
     endtask
     
     task updateHighScore; begin
-        if (firstDigit > highFirstDigit) begin
-            highFirstDigit = firstDigit;
-            highSecondDigit = secondDigit;
-            highThirdDigit = thirdDigit;
-            highFourthDigit = fourthDigit;
-        end
-        else if (firstDigit == highFirstDigit) begin
+        //if (firstDigit > highFirstDigit) begin
+            //highFirstDigit = firstDigit;
+            //highSecondDigit = secondDigit;
+            //highThirdDigit = thirdDigit;
+            //highFourthDigit = fourthDigit;
+        //end
+        //else if (firstDigit == highFirstDigit) begin
             if (secondDigit > highSecondDigit) begin
                 highSecondDigit = secondDigit;
                 highThirdDigit = thirdDigit;
@@ -376,7 +362,7 @@ module Snake(
                     end
                 end
             end
-        end
+        //end
     end
     endtask
 
