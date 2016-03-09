@@ -160,8 +160,8 @@ module Snake(
         snakeY[0] = 3;
         snakeX[0] = 1;
         
-        foodY = 5;
-        foodX = 5;
+        foodY = 3;
+        foodX = 6;
         foundFood = 0;
         
         currentDir = `DIR_RIGHT;
@@ -184,11 +184,11 @@ module Snake(
                     snakeX[i] = 0;
                 end
                 snakeTail = 0;
-                snakeY[0] = 5;
-                snakeX[0] = 7;
+                snakeY[0] = 3;
+                snakeX[0] = 1;
                 
-                foodY = 9;
-                foodX = 2;
+                foodY = 3;
+                foodX = 6;
                 
                 currentDir = `DIR_RIGHT;
                 checkCollision = 0;
