@@ -28,7 +28,7 @@ module Snake(
     reg [`BITS_PER_DIR-1:0] currentDir;
     reg checkCollision;
 
-    parameter deadTicks = 75000000;
+    parameter deadTicks = 50000000;
     parameter segCurrentScore = 1'b0;
     parameter segHighScore = 1'b1;
     reg [$clog2(deadTicks)-1:0] deadCounter;
@@ -145,6 +145,10 @@ module Snake(
         thirdDigit = 0;
         fourthDigit = 1;
         
+        segSecondDigit = 0;
+        segThirdDigit = 0;
+        segFourthDigit = 1;
+        
         //highFirstDigit = 0;
         highSecondDigit = 0;
         highThirdDigit = 0;
@@ -157,11 +161,11 @@ module Snake(
             snakeX[i] = 0;
         end
         snakeTail = 0;
-        snakeY[0] = 5;
-        snakeX[0] = 5;
+        snakeY[0] = 3;
+        snakeX[0] = 3;
         
-        foodY = 5;
-        foodX = 10;
+        foodY = 3;
+        foodX = 6;
         foundFood = 0;
         
         currentDir = `DIR_RIGHT;
@@ -184,8 +188,8 @@ module Snake(
                     snakeX[i] = 0;
                 end
                 snakeTail = 0;
-                snakeY[0] = 5;
-                snakeX[0] = 5;
+                snakeY[0] = 3;
+                snakeX[0] = 6;
                 
                 foodY = 5;
                 foodX = 10;
