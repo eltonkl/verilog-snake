@@ -28,13 +28,16 @@ module Snake(
     reg [`BITS_PER_DIR-1:0] currentDir;
     reg checkCollision;
 
-    parameter deadTicks = 25000000;
+    parameter deadTicks = 75000000;
     parameter segCurrentScore = 1'b0;
     parameter segHighScore = 1'b1;
     reg [$clog2(deadTicks)-1:0] deadCounter;
 
     reg [yCoordBits-1:0] foodY;
     reg [xCoordBits-1:0] foodX;
+    wire [yCoordBits-1:0] randFoodY;
+    wire [xCoordBits-1:0] randFoodX;
+    reg foundFood;
 
     // seg control
     //reg [3:0] segFirstDigit;
@@ -159,6 +162,7 @@ module Snake(
         
         foodY = 5;
         foodX = 10;
+        foundFood = 0;
         
         currentDir = `DIR_RIGHT;
         currentState = `STATE_DEAD;
@@ -208,9 +212,19 @@ module Snake(
             end
         end
         else if (currentState == `STATE_FIND_FOOD) begin
-            foodX = 3;
-            foodY = 9;
-            currentState = `STATE_ALIVE;
+            if (randFoodX == 0 || randFoodY == 0 || randFoodX == (`GRID_WIDTH - 1) || randFoodY == (`GRID_HEIGHT - 1))
+                foundFood = 0;
+            else
+                foundFood = 1;
+            for (i = 0; i < numSnakePieces; i = i + 1) begin
+                if (snakeY[i] == randFoodY && snakeX[i] == randFoodX)
+                        foundFood = 0;
+            end
+            if (foundFood == 1) begin
+                foodX = randFoodX;
+                foodY = randFoodY;
+                currentState = `STATE_ALIVE;
+            end
         end
         else begin
             if (centerPressed == 1) begin
@@ -297,17 +311,11 @@ module Snake(
         end
     end
     
-//    FoodRandomizer fr(
-//        .Blocks(packBlocks),
-//        .MasterClock(MasterClock),
-//        .ButtonLeft(ButtonLeft),
-//        .ButtonRight(ButtonRight),
-//        .ButtonUp(ButtonUp),
-//        .ButtonDown(ButtonDown),
-//        .ButtonCenter(ButtonCenter),
-//        .NextFoodV(pNextFoodV),
-//        .NextFoodH(pNextFoodH)
-//    );
+    FoodRandomizer fr(
+        .Clock(clock),
+        .yCoord(randFoodY),
+        .xCoord(randFoodX)
+    );
     
     SegController sc(
         .Clock(fastClock),
